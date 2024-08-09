@@ -1,31 +1,38 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/account.dart';
+import 'package:frontend/main.dart';
 import 'package:frontend/models/workout.dart';
+import 'package:frontend/provider/provider.dart';
 import 'package:frontend/screens/workout/create_workout_details.dart';
-import 'package:frontend/screens/dataCollection/p1_base_collection.dart';
 import 'package:frontend/provider/main_settings.dart';
+import 'package:frontend/screens/workout/workout_data_management.dart';
 import 'package:frontend/services/workout.dart';
+import 'package:frontend/widgets/deleteConfirmation.dart';
+import 'package:frontend/widgets/dialog_box.dart';
 import 'package:frontend/widgets/header.dart';
 import 'package:frontend/widgets/name_indicator.dart';
 import 'package:frontend/widgets/navigation_drawer.dart';
 import 'package:frontend/screens/workout/workout_card.dart';
 
-class WorkoutLibrary extends StatefulWidget {
+class WorkoutLibrary extends ConsumerStatefulWidget {
   const WorkoutLibrary({
     super.key,
   });
 
   @override
-  State<WorkoutLibrary> createState() => _WorkoutLibraryState();
+  ConsumerState<WorkoutLibrary> createState() => _WorkoutLibraryState();
 }
 
-class _WorkoutLibraryState extends State<WorkoutLibrary> {
-  late Future<List<Workout>> _workoutsFuture;
+class _WorkoutLibraryState extends ConsumerState<WorkoutLibrary>
+    with RouteAware {
+  List<Workout> _workoutsFuture = [];
+
   final PageController _pageController = PageController();
 
-  List<String> _bodyPart = ['All', 'Two', 'Three', 'Four'];
-  List<String> _workoutType = ['All', 'Custom', 'Premade', 'Four'];
-  List<String> _favorite = ['All', 'Favorite', 'Non-Favorite'];
+  final List<String> _bodyPart = ['All', 'Two', 'Three', 'Four'];
+  final List<String> _workoutType = ['All', 'Custom', 'Premade', 'Four'];
+  final List<String> _favorite = ['All', 'Favorite', 'Non-Favorite'];
 
   late String _selectedItemPart = _bodyPart[0];
   late String _selectedItemType = _workoutType[0];
@@ -73,14 +80,43 @@ class _WorkoutLibraryState extends State<WorkoutLibrary> {
     );
   }
 
+  void inputReset() {
+    ref.read(name.notifier).state = "";
+    ref.read(description.notifier).state = "";
+    ref.read(intensity.notifier).state = "Easy";
+    ref.read(exerciseListProvider.notifier).state = [];
+    ref.read(imageProvider.notifier).state = null;
+    ref.read(image.notifier).state = null;
+    ref.read(imageUrl.notifier).state = "";
+    ref.read(thumbnailProvider.notifier).state = null;
+  }
+
+  @override
+  void didPopNext() {
+    setState(() {
+      // _workoutsFuture = WorkoutApiService.fetchWorkouts();
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Ensure that ModalRoute is a PageRoute
+    if (ModalRoute.of(context) is PageRoute) {
+      routeObserver.subscribe(this, ModalRoute.of(context) as PageRoute);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
-    _workoutsFuture = WorkoutApiService.fetchWorkouts();
+    // _workoutsFuture = WorkoutApiService.fetchWorkouts();
   }
 
   @override
   Widget build(BuildContext context) {
+    _workoutsFuture = ref.watch(workoutsFetchProvider);
+
     return Scaffold(
       backgroundColor: mainColor,
       drawer: const NavigationDrawerContent(),
@@ -280,11 +316,6 @@ class _WorkoutLibraryState extends State<WorkoutLibrary> {
                       ],
                     ),
                     const Spacer(),
-                    const Icon(
-                      Icons.add_circle_outline,
-                      color: Colors.white,
-                      size: 30.0,
-                    ),
                   ],
                 ),
               ],
@@ -323,77 +354,167 @@ class _WorkoutLibraryState extends State<WorkoutLibrary> {
             left: 5,
             child: Container(
               height: 500,
-              child: FutureBuilder<List<Workout>>(
-                future: _workoutsFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Center(child: CircularProgressIndicator());
-                  } else if (snapshot.hasError) {
-                    return Center(child: Text('Error: ${snapshot.error}'));
-                  } else if (snapshot.hasData) {
-                    List<Workout> workouts = snapshot.data!;
-                    return PageView(
-                      controller: _pageController,
-                      children: <Widget>[
-                        Container(
-                          height: 500,
-                          child: SingleChildScrollView(
-                            child: Column(
-                              children: workouts.map(
-                                (workout) {
-                                  return Container(
+              child: PageView(
+                controller: _pageController,
+                children: <Widget>[
+                  Container(
+                    height: 500,
+                    child: SingleChildScrollView(
+                      child: Column(
+                        children: _workoutsFuture.map(
+                          (workout) {
+                            return Container(
+                              width: MediaQuery.of(context).size.width * 0.90,
+                              margin:
+                                  const EdgeInsets.symmetric(horizontal: 5.0),
+                              child: WorkoutCard(
+                                workout: workout,
+                              ),
+                            );
+                          },
+                        ).toList(),
+                      ),
+                    ),
+                  ),
+                  Container(
+                    height: 500,
+                    child: SingleChildScrollView(
+                      child: Column(
+                        children: _workoutsFuture.map(
+                          (workout) {
+                            return workout.account.toString() == setup.id
+                                ? Container(
                                     width: MediaQuery.of(context).size.width *
                                         0.90,
                                     margin: const EdgeInsets.symmetric(
                                         horizontal: 5.0),
-                                    child: WorkoutCard(
-                                        id: workout.id,
-                                        name: workout.name,
-                                        description: workout.description,
-                                        account: workout.account,
-                                        imageUrl: workout.imageUrl,
-                                        difficulty: workout.difficulty),
-                                  );
-                                },
-                              ).toList(),
-                            ),
-                          ),
-                        ),
-                        Container(
-                          height: 500,
-                          child: SingleChildScrollView(
-                            child: Column(
-                              children: workouts.map(
-                                (workout) {
-                                  return workout.account.toString() == setup.id
-                                      ? Container(
-                                          width: MediaQuery.of(context)
-                                                  .size
-                                                  .width *
-                                              0.90,
-                                          margin: const EdgeInsets.symmetric(
-                                              horizontal: 5.0),
-                                          child: WorkoutCard(
-                                              id: workout.id,
-                                              name: workout.name,
-                                              description: workout.description,
-                                              account: workout.account,
-                                              imageUrl: workout.imageUrl,
-                                              difficulty: workout.difficulty),
-                                        )
-                                      : const SizedBox();
-                                },
-                              ).toList(),
-                            ),
-                          ),
-                        )
-                      ],
-                    );
-                  } else {
-                    return Center(child: Text('No data available'));
-                  }
-                },
+                                    child: Stack(
+                                      children: [
+                                        WorkoutCard(
+                                          workout: workout,
+                                        ),
+                                        Positioned(
+                                          bottom: 0,
+                                          right: 0,
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(5),
+                                            child: GestureDetector(
+                                              onTap: () {
+                                                deleteConfirmation(
+                                                    isExercise: false,
+                                                    ref: ref,
+                                                    context: context,
+                                                    id: workout.id);
+                                              },
+                                              child: Icon(
+                                                Icons.highlight_remove_sharp,
+                                                color: secondaryColor,
+                                                size: 25.0,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                : const SizedBox();
+                          },
+                        ).toList(),
+                      ),
+                    ),
+                  )
+                ],
               ),
+
+              // Container(
+              //   height: 500,
+              //   child: FutureBuilder<List<Workout>>(
+              //     future: _workoutsFuture,
+              //     builder: (context, snapshot) {
+              //       if (snapshot.connectionState == ConnectionState.waiting) {
+              //         return Center(child: CircularProgressIndicator());
+              //       } else if (snapshot.hasError) {
+              //         return Center(child: Text('Error: ${snapshot.error}'));
+              //       } else if (snapshot.hasData) {
+              //         List<Workout> workouts = snapshot.data!;
+              //         return PageView(
+              //           controller: _pageController,
+              //           children: <Widget>[
+              //             Container(
+              //               height: 500,
+              //               child: SingleChildScrollView(
+              //                 child: Column(
+              //                   children: workouts.map(
+              //                     (workout) {
+              //                       return Container(
+              //                         width: MediaQuery.of(context).size.width *
+              //                             0.90,
+              //                         margin: const EdgeInsets.symmetric(
+              //                             horizontal: 5.0),
+              //                         child: WorkoutCard(
+              //                           workout: workout,
+              //                         ),
+              //                       );
+              //                     },
+              //                   ).toList(),
+              //                 ),
+              //               ),
+              //             ),
+              //             Container(
+              //               height: 500,
+              //               child: SingleChildScrollView(
+              //                 child: Column(
+              //                   children: workouts.map(
+              //                     (workout) {
+              //                       return workout.account.toString() == setup.id
+              //                           ? Container(
+              //                               width: MediaQuery.of(context)
+              //                                       .size
+              //                                       .width *
+              //                                   0.90,
+              //                               margin: const EdgeInsets.symmetric(
+              //                                   horizontal: 5.0),
+              //                               child: Stack(
+              //                                 children: [
+              //                                   WorkoutCard(
+              //                                     workout: workout,
+              //                                   ),
+              //                                   Positioned(
+              //                                     bottom: 0,
+              //                                     right: 0,
+              //                                     child: Padding(
+              //                                       padding: EdgeInsets.all(5),
+              //                                       child: GestureDetector(
+              //                                         onTap: () {
+              //                                           deleteConfirmation(
+              //                                               workout.id);
+              //                                         },
+              //                                         child: Icon(
+              //                                           Icons
+              //                                               .highlight_remove_sharp,
+              //                                           color: secondaryColor,
+              //                                           size: 25.0,
+              //                                         ),
+              //                                       ),
+              //                                     ),
+              //                                   ),
+              //                                 ],
+              //                               ),
+              //                             )
+              //                           : const SizedBox();
+              //                     },
+              //                   ).toList(),
+              //                 ),
+              //               ),
+              //             )
+              //           ],
+              //         );
+              //       } else {
+              //         return Center(child: Text('No data available'));
+              //       }
+              //     },
+              //   ),
+              // ),
             ),
           ),
           // Positioned(
@@ -424,9 +545,12 @@ class _WorkoutLibraryState extends State<WorkoutLibrary> {
             right: 20,
             bottom: 15,
             child: ElevatedButton(
-              onPressed: createWorkout,
+              onPressed: () {
+                createWorkout();
+                inputReset();
+              },
               style: ElevatedButton.styleFrom(
-                fixedSize: Size(300, 5),
+                fixedSize: const Size(300, 5),
                 foregroundColor: Colors.white,
                 backgroundColor: tertiaryColor,
               ),

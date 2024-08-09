@@ -1,30 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:frontend/account.dart';
+import 'package:frontend/models/workout.dart';
 import 'package:frontend/screens/workout/workout.dart';
 import 'package:frontend/provider/main_settings.dart';
+import 'package:frontend/screens/workout/workout_data_management.dart';
+import 'package:frontend/services/history.dart';
 
-class WorkoutCard extends StatefulWidget {
-  final int id;
-  final String name;
-  final String description;
-  final int account;
-  final String imageUrl;
-  final String difficulty;
+class WorkoutCard extends ConsumerStatefulWidget {
+  final Workout workout;
 
   const WorkoutCard({
     super.key,
-    required this.id,
-    required this.name,
-    required this.description,
-    required this.account,
-    required this.imageUrl,
-    required this.difficulty,
+    required this.workout,
   });
 
   @override
-  State<WorkoutCard> createState() => _WorkoutCardState();
+  ConsumerState<WorkoutCard> createState() => _WorkoutCardState();
 }
 
-class _WorkoutCardState extends State<WorkoutCard> {
+class _WorkoutCardState extends ConsumerState<WorkoutCard> {
   String name = "Something Workout someting";
   String author = "Someone I Know";
   String difficulty = "EZ AF";
@@ -36,12 +31,7 @@ class _WorkoutCardState extends State<WorkoutCard> {
       context,
       MaterialPageRoute(
           builder: (context) => workoutPage(
-                id: widget.id,
-                name: widget.name,
-                difficulty: widget.difficulty,
-                description: widget.description,
-                account: widget.account,
-                imageUrl: widget.imageUrl,
+                id: widget.workout.id,
               )),
     );
   }
@@ -67,49 +57,21 @@ class _WorkoutCardState extends State<WorkoutCard> {
                 ),
                 child: Row(
                   children: [
-                    Stack(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: ShaderMask(
-                            shaderCallback: (rect) {
-                              return const LinearGradient(
-                                begin: Alignment.centerRight,
-                                end: Alignment.centerLeft,
-                                colors: [Colors.transparent, Colors.red],
-                              ).createShader(
-                                Rect.fromLTRB(0, 0, rect.width, rect.height),
-                              );
-                            },
-                            blendMode: BlendMode.dstIn,
-                            child: Image.network(
-                              widget.imageUrl,
-                              fit: BoxFit.cover,
-                              width: MediaQuery.of(context).size.width * 0.50,
-                              height: MediaQuery.of(context).size.height * 0.15,
-                            ),
-                          ),
-                        ),
-                        Padding(
-                          padding: EdgeInsets.all(5),
-                          child: Icon(
-                            Icons.favorite_border,
-                            color: secondaryColor,
-                            size: 25.0,
-                          ),
-                        ),
-                      ],
-                    ),
                     Expanded(
                       child: Padding(
-                        padding: const EdgeInsets.all(5),
+                        padding: const EdgeInsets.only(
+                          left: 10.0,
+                          top: 10.0,
+                          right: 5.0,
+                          bottom: 10.0,
+                        ),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Container(
                               width: 120,
                               child: Text(
-                                widget.name,
+                                widget.workout.name,
                                 style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 15,
@@ -117,14 +79,13 @@ class _WorkoutCardState extends State<WorkoutCard> {
                                     height: 0.8),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
-                                textAlign: TextAlign.end,
                               ),
                             ),
                             SizedBox(
                               height: 10,
                             ),
                             Text(
-                              widget.difficulty,
+                              widget.workout.difficulty,
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 12,
@@ -143,7 +104,7 @@ class _WorkoutCardState extends State<WorkoutCard> {
                             Container(
                               width: 110,
                               child: Text(
-                                "ID ${widget.id}\nBy: ${author}sdfavsdfvsefasvefaes",
+                                "ID ${widget.workout.id}\nBy: ${author}sdfavsdfvsefasvefaes",
                                 style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 7,
@@ -156,7 +117,61 @@ class _WorkoutCardState extends State<WorkoutCard> {
                           ],
                         ),
                       ),
-                    )
+                    ),
+                    Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: ShaderMask(
+                            shaderCallback: (rect) {
+                              return const LinearGradient(
+                                begin: Alignment.centerRight,
+                                end: Alignment.centerLeft,
+                                colors: [Colors.transparent, Colors.red],
+                              ).createShader(
+                                Rect.fromLTRB(
+                                    rect.width * .65, rect.height * .65, 0, 0),
+                              );
+                            },
+                            blendMode: BlendMode.dstIn,
+                            child: Image.network(
+                              widget.workout.imageUrl,
+                              fit: BoxFit.cover,
+                              width: MediaQuery.of(context).size.width * 0.50,
+                              height: MediaQuery.of(context).size.height * 0.15,
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          top: 0,
+                          right: 0,
+                          child: Padding(
+                            padding: EdgeInsets.all(5),
+                            child: GestureDetector(
+                              child: Icon(
+                                widget.workout.isFavorite == false
+                                    ? Icons.favorite_border
+                                    : Icons.favorite,
+                                color: secondaryColor,
+                                size: 25.0,
+                              ),
+                              onTap: () {
+                                widget.workout.isFavorite == false
+                                    ? HistoryApiService.addWorkoutFavorite(
+                                        ref: ref,
+                                        accountID: int.parse(setup.id),
+                                        workoutID: widget.workout.id)
+                                    : HistoryApiService.deleteWorkoutFavorite(
+                                        ref: ref,
+                                        accountID: int.parse(setup.id),
+                                        workoutID: widget.workout.id);
+                                setState(() {});
+                              },
+                            ),
+                          ),
+                        )
+                      ],
+                    ),
                   ],
                 ),
               ),

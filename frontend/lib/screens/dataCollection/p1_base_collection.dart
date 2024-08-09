@@ -7,8 +7,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/misc/logicFunction/isolateProcessPDV.dart';
 import 'package:frontend/misc/pose/detector_view.dart';
 import 'package:frontend/misc/pose/pose_painter.dart';
+import 'package:frontend/provider/data_collection_provider.dart';
 import 'package:frontend/screens/coreFunctionality/globalVariables.dart';
-import 'package:frontend/screens/coreFunctionality/provider_collection.dart';
+// import 'package:frontend/screens/coreFunctionality/provider_collection.dart';
+import 'package:frontend/screens/dataCollection/dataCollection_data_management.dart';
 import 'package:frontend/screens/dataCollection/p1_datset_collection.dart';
 import 'package:frontend/provider/main_settings.dart';
 import 'package:frontend/widgets/error_widget.dart';
@@ -162,12 +164,12 @@ class _BaseCollectionState extends ConsumerState<BaseCollection> {
           queueNormalizeData.removeAt(0);
           tempPrevCurr.add(value['translatedCoordinates']);
 
-          if (ref.watch(isPerforming) == true) {
+          if (ref.read(isPerforming) == true) {
             temp = value['translatedCoordinates'];
           }
 
           setState(() {
-            ref.watch(isAllCoordinatesPresent.notifier).state =
+            ref.read(isAllCoordinatesPresent.notifier).state =
                 value['allCoordinatesPresent'];
           });
 
@@ -196,7 +198,7 @@ class _BaseCollectionState extends ConsumerState<BaseCollection> {
           .then((value) async {
         queueMovementData.removeAt(0);
 
-        if (ref.watch(isPerforming) == true) {
+        if (ref.read(isPerforming) == true) {
           if (value == false) {
             nowCollecting = true;
           }
@@ -245,7 +247,7 @@ class _BaseCollectionState extends ConsumerState<BaseCollection> {
           }
         }
 
-        if (value == true && ref.watch(isPerforming) == false) {
+        if (value == true && ref.read(isPerforming) == false) {
           if (countDowntoPerform == false) {
             _controller.start();
             countDowntoPerform = true;
@@ -253,15 +255,15 @@ class _BaseCollectionState extends ConsumerState<BaseCollection> {
           }
 
           if (_controller.getTime().toString() == "3" &&
-              ref.watch(isPerforming) == false) {
+              ref.read(isPerforming) == false) {
             inferencingList = [];
 
-            ref.watch(isPerforming.notifier).state = true;
+            ref.read(isPerforming.notifier).state = true;
           }
         }
         // -----------------checking for movement before executing for collecting data--------------------------------------
 
-        if (ref.watch(isPerforming) == false &&
+        if (ref.read(isPerforming) == false &&
             countDowntoPerform == true &&
             value == false) {
           _controller.reset();
@@ -285,7 +287,7 @@ class _BaseCollectionState extends ConsumerState<BaseCollection> {
           inputImage.metadata!.rotation,
           _cameraLensDirection,
           executionStateResult,
-          ref.watch(ignoreCoordinatesProvider));
+          ref.read(ignoreCoordinatesProvider));
       _customPaint = CustomPaint(painter: painter);
     } else {
       _text = 'Poses found: ${poses.length}\n\n';
@@ -332,7 +334,7 @@ class _BaseCollectionState extends ConsumerState<BaseCollection> {
           onChange: (String timeStamp) {},
           timeFormatterFunction: (defaultFormatterFunction, duration) {
             // if (nowPerforming == true) {
-            if (ref.watch(isPerforming) == true) {
+            if (ref.read(isPerforming) == true) {
               return dynamicCountDownText;
             } else {
               return Function.apply(defaultFormatterFunction, [duration]);
@@ -355,22 +357,22 @@ class _BaseCollectionState extends ConsumerState<BaseCollection> {
     Widget displayError1;
     Widget displayError2;
 
-    // Color color1 = ref.watch(mainColorState);
-    // Color color2 = ref.watch(secondaryColorState);
-    // Color color3 = ref.watch(tertiaryColorState);
+    // Color color1 = ref.read(mainColorState);
+    // Color color2 = ref.read(secondaryColorState);
+    // Color color3 = ref.read(tertiaryColorState);
 
-    var textSizeModifierSet = ref.watch(textSizeModifier);
+    var textSizeModifierSet = ref.read(textSizeModifier);
     // var textSizeModifierSetIndividual = textSizeModifierSet["smallText"]!;
 
-    final luminanceValue = ref.watch(luminanceProvider);
+    final luminanceValue = ref.read(luminanceProvider);
 
-    if (ref.watch(isPerforming) == true) {
+    if (ref.read(isPerforming) == true) {
       displayCountdownTimer = const noDisplay();
     } else {
       displayCountdownTimer = timerCountDown(context);
     }
 
-    if (ref.watch(isAllCoordinatesPresent) == false) {
+    if (ref.read(isAllCoordinatesPresent) == false) {
       displayError1 = const poseError(
         opacity: 1,
       );
@@ -397,11 +399,9 @@ class _BaseCollectionState extends ConsumerState<BaseCollection> {
 
                 Align(
                   alignment: Alignment.topCenter,
-                  // Set top to 0 to cover the entire screen from the top
                   child: Container(
-                    width: screenWidth, // Set a specific width
-                    height:
-                        screenHeight, // Set a specific height or use constraints
+                    width: screenWidth,
+                    height: screenHeight,
                     child: DetectorView(
                       isCollecting: true,
                       title: 'Pose Detector',

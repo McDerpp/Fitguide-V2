@@ -162,7 +162,7 @@ def trainModel(positiveDataPath, negativeDataPath,  dataset_info=None, model_inf
             
             
         file_saved_path = convert_tf_to_tflite(os.path.join('media', "nonTFLiteModels"), [1, len(X_train[0]), len(
-            X_train[0][0])], temp, 'whole_model', id_num, test_loss, test_accuracy)
+            X_train[0][0])], temp, 'WM', id_num, test_loss, test_accuracy)
         checking_input_value = checking_inputs(
             checking_input_positive, checking_input_negative, file_saved_path)
 
@@ -170,6 +170,8 @@ def trainModel(positiveDataPath, negativeDataPath,  dataset_info=None, model_inf
         print("best_combined_metric -> ", best_combined_metric,
               "combined_metric ->", combined_metric)
         print("best_model_tflite -->", best_model_tflite)
+        print("file_saved_path -->", file_saved_path)
+
         print("os.path.exists(best_model_tflite) ----> ",
               os.path.exists(best_model_tflite))
 
@@ -302,6 +304,7 @@ def trainModel(positiveDataPath, negativeDataPath,  dataset_info=None, model_inf
     #       session_store['setModelInfo'])
 
     # return setModelInfo
+    print("best_model_tflite_test--->",best_model_tflite)
     return best_model_tflite
 
 

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/screens/calendar.dart';
+import 'package:frontend/screens/history/calendar.dart';
 import 'package:frontend/screens/exercise/exercises_library.dart';
 import 'package:frontend/screens/home.dart';
 import 'package:frontend/screens/login.dart';

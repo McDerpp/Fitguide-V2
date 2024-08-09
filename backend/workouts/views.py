@@ -6,16 +6,19 @@ from .models import Workout,WorkoutExercise
 from exercises.models import Exercise
 from exercises.serializer import ExerciseSerializer
 
-from .serializer import WorkoutSerializer,WorkoutExerciseSerializer
+from .serializer import AddWorkoutSerializer, WorkoutSerializer,WorkoutExerciseSerializer
 
 @api_view(['POST'])
 def addWorkout(request):
     if request.method == 'POST':
-        serializer = WorkoutSerializer(data=request.data)
-        print(request.data)
+        serializer = AddWorkoutSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            workout = serializer.save()
+            
+            workout_serializer = WorkoutSerializer(workout)
+            
+            return Response(workout_serializer.data, status=status.HTTP_201_CREATED)
+        
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 @api_view(['POST'])
@@ -52,12 +55,15 @@ def deleteWorkout(request,workout_id):
 
 # for adding exercise for workout
 @api_view(['POST'])
-def addWorkoutExercise(request):
+def addWorkoutExercise(request,workout_id,exercise_id):
     if request.method == 'POST':
-        exercise = Exercise.objects.get(id=int(request.data["exercise"]))
-        workout = Workout.objects.get(id=int(request.data["workout"]))
+        exercise = Exercise.objects.get(id=int(exercise_id))
+        workout = Workout.objects.get(id=int(workout_id))
         if exercise and workout:
-            serializer = WorkoutExerciseSerializer(data=request.data)
+            data = request.data.copy()
+            data['exercise'] = exercise.id
+            data['workout'] = workout.id
+            serializer = WorkoutExerciseSerializer(data=data)
             print(request.data)
             if serializer.is_valid():
                 serializer.save()
@@ -66,10 +72,25 @@ def addWorkoutExercise(request):
         else:
             return Response("workout or exercise not", status=status.HTTP_404_NOT_FOUND)
 
+@api_view(['DELETE'])
+def deleteWorkoutExercise(request,workout_id,exercise_id):
+    try:
+        if not workout_id:
+            return Response({"detail": "ID parameter is required."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        exercise = WorkoutExercise.objects.filter(workout_id=workout_id,exercise_id=exercise_id)
+        print(exercise)
+        exercise.delete()
+
+        return Response({"detail": "Workout deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+    
+    except Exercise.DoesNotExist:
+        return Response({"detail": "Workout not found."}, status=status.HTTP_404_NOT_FOUND)
+
 
 
 @api_view(['GET'])    
-def getWorkoutCard(request):
+def getWorkoutCard(request,account_id):
     if request.method == 'GET':
         search = request.query_params.get('search', None)
         if search:
@@ -77,7 +98,7 @@ def getWorkoutCard(request):
         else:
             workout = Workout.objects.all().order_by('name')
 
-        serializer = WorkoutSerializer(workout, many=True)
+        serializer = WorkoutSerializer(workout, context={'account_id': account_id},many=True)
     return Response(serializer.data)
 
 

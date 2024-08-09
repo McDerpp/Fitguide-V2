@@ -11,7 +11,6 @@ import 'package:frontend/widgets/ignore_pose.dart';
 import 'dart:core';
 
 import '../../provider/data_collection_provider.dart';
-import '../../provider/global_variable_provider.dart';
 import 'package:showcaseview/showcaseview.dart';
 
 class DatasetCollection extends ConsumerStatefulWidget {
@@ -106,8 +105,6 @@ class _DatasetCollectionState extends ConsumerState<DatasetCollection> {
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
-
-    textSizeModifierSet = ref.watch(textSizeModifier);
 
     Widget displayError1;
     Widget displayError2;

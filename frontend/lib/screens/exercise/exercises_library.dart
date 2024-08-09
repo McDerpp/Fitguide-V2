@@ -1,24 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:frontend/account.dart';
 import 'package:frontend/models/exercise.dart';
+import 'package:frontend/provider/provider.dart';
 import 'package:frontend/screens/dataCollection/p1_base_collection.dart';
 import 'package:frontend/provider/main_settings.dart';
+import 'package:frontend/screens/exercise/create_exercise.dart';
+import 'package:frontend/screens/exercise/exercise_data_management.dart';
+import 'package:frontend/screens/workout/workout_data_management.dart';
 import 'package:frontend/services/exercise.dart';
 import 'package:frontend/screens/exercise/exercise_card.dart';
+import 'package:frontend/widgets/deleteConfirmation.dart';
 import 'package:frontend/widgets/header.dart';
 import 'package:frontend/widgets/name_indicator.dart';
 import 'package:frontend/widgets/navigation_drawer.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
-class ExerciseLibrary extends StatefulWidget {
+class ExerciseLibrary extends ConsumerStatefulWidget {
   const ExerciseLibrary({
     super.key,
   });
 
   @override
-  State<ExerciseLibrary> createState() => _ExerciseLibraryState();
+  ConsumerState<ExerciseLibrary> createState() => _ExerciseLibraryState();
 }
 
-class _ExerciseLibraryState extends State<ExerciseLibrary> {
+class _ExerciseLibraryState extends ConsumerState<ExerciseLibrary> {
   List<String> _bodyPart = ['All', 'Two', 'Three', 'Four'];
   List<String> _workoutType = ['All', 'Custom', 'Premade', 'Four'];
   List<String> _favorite = ['All', 'Favorite', 'Non-Favorite'];
@@ -29,20 +36,35 @@ class _ExerciseLibraryState extends State<ExerciseLibrary> {
 
   String title = '';
 
-  late Future<List<Exercise>> _exercisesFuture;
+  List<Exercise> _exercisesFuture = [];
   final PageController _pageController = PageController();
 
   @override
   void initState() {
     super.initState();
-    _exercisesFuture = ExerciseApiService.fetchExercises();
   }
 
   void createExercise() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const BaseCollection()),
+      MaterialPageRoute(builder: (context) => const CreateExercise()),
     );
+  }
+
+  void resetExercise() {
+    ref.read(videoPathProvider.notifier).state = null;
+    ref.read(videoThumbnailProvider.notifier).state = null;
+    ref.read(videoURLProvider.notifier).state = "";
+
+    ref.read(image.notifier).state = null;
+    ref.read(thumbnailProvider.notifier).state = null;
+    ref.read(imageUrl.notifier).state = "";
+
+    ref.read(exerciseNameProvider.notifier).state = "";
+    ref.read(repsProvider.notifier).state = "";
+    ref.read(setsProvider.notifier).state = "";
+    ref.read(exerciseDescription.notifier).state = "";
+    ref.read(exerciseIntensity.notifier).state = 'Easy';
   }
 
   Widget dropDown(List<String> inputList, String selectedItem,
@@ -79,6 +101,8 @@ class _ExerciseLibraryState extends State<ExerciseLibrary> {
 
   @override
   Widget build(BuildContext context) {
+    _exercisesFuture = ref.watch(exerciseFetchProvider);
+
     return Scaffold(
       backgroundColor: mainColor,
       drawer: const NavigationDrawerContent(),
@@ -251,7 +275,6 @@ class _ExerciseLibraryState extends State<ExerciseLibrary> {
             ),
           ),
           const Header(),
-
           Positioned(
             top: 190,
             left: 16,
@@ -264,138 +287,93 @@ class _ExerciseLibraryState extends State<ExerciseLibrary> {
               ),
             ),
           ),
-
           Positioned(
             top: 240,
             right: 5,
             left: 5,
             child: Container(
               height: 500,
-              child: FutureBuilder<List<Exercise>>(
-                future: _exercisesFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Center(child: CircularProgressIndicator());
-                  } else if (snapshot.hasError) {
-                    return Center(child: Text('Error: ${snapshot.error}'));
-                  } else if (snapshot.hasData) {
-                    List<Exercise> exercises = snapshot.data!;
-                    return PageView(
-                        controller: _pageController,
-                        children: <Widget>[
-                          Container(
-                            height: 500,
-                            child: SingleChildScrollView(
-                              child: Column(
-                                children: exercises.map(
-                                  (exercise) {
-                                    return Container(
-                                      width: MediaQuery.of(context).size.width *
-                                          0.90,
-                                      margin: const EdgeInsets.symmetric(
-                                          horizontal: 5.0),
-                                      child: ExerciseCard(
-                                        id: exercise.id.toString(),
-                                        nameExercise: exercise.name,
-                                        repitions: exercise.numSet,
-                                        sets: exercise.numSet,
-                                        parts: exercise.parts,
-                                        author: "NOBODY",
-                                        image: exercise.imageUrl,
-                                        video: exercise.videoUrl,
-                                      ),
-                                    );
-                                  },
-                                ).toList(),
+              child: PageView(
+                controller: _pageController,
+                children: <Widget>[
+                  Container(
+                    height: 500,
+                    child: SingleChildScrollView(
+                      child: Column(
+                        children: _exercisesFuture.map(
+                          (exercise) {
+                            return Container(
+                              width: MediaQuery.of(context).size.width * 0.90,
+                              margin:
+                                  const EdgeInsets.symmetric(horizontal: 5.0),
+                              child: ExerciseCard(
+                                exercise: exercise,
                               ),
-                            ),
-                          ),
-                          Container(
-                            height: 500,
-                            child: SingleChildScrollView(
-                              child: Column(
-                                children: exercises.map(
-                                  (exercise) {
-                                    return Container(
-                                      width: MediaQuery.of(context).size.width *
-                                          0.90,
-                                      margin: const EdgeInsets.symmetric(
-                                          horizontal: 5.0),
-                                      child: ExerciseCard(
-                                        id: exercise.id.toString(),
-                                        nameExercise: exercise.name,
-                                        repitions: exercise.numSet,
-                                        sets: exercise.numSet,
-                                        parts: exercise.parts,
-                                        author: "NOBODY",
-                                        image: exercise.imageUrl,
-                                        video: exercise.videoUrl,
-                                      ),
-                                    );
-                                  },
-                                ).toList(),
-                              ),
-                            ),
-                          ),
-                        ]);
-                  } else {
-                    return Center(child: Text('No data available'));
-                  }
-                },
+                            );
+                          },
+                        ).toList(),
+                      ),
+                    ),
+                  ),
+                  Container(
+                    height: 500,
+                    child: SingleChildScrollView(
+                      child: Column(
+                        children: _exercisesFuture.map(
+                          (exercise) {
+                            return exercise.account.toString() == setup.id
+                                ? Container(
+                                    width: MediaQuery.of(context).size.width *
+                                        0.90,
+                                    margin: const EdgeInsets.symmetric(
+                                        horizontal: 5.0),
+                                    child: Stack(
+                                      children: [
+                                        ExerciseCard(
+                                          exercise: exercise,
+                                        ),
+                                        Positioned(
+                                          bottom: 0,
+                                          right: 0,
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(5),
+                                            child: GestureDetector(
+                                              onTap: () {
+                                                deleteConfirmation(
+                                                    isExercise: true,
+                                                    ref: ref,
+                                                    context: context,
+                                                    id: exercise.id);
+                                              },
+                                              child: Icon(
+                                                Icons.highlight_remove_sharp,
+                                                color: secondaryColor,
+                                                size: 25.0,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ))
+                                : SizedBox();
+                          },
+                        ).toList(),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-          // FutureBuilder<List<Exercise>>(
-          //   future: _exercisesFuture,
-          //   builder: (context, snapshot) {
-          //     if (snapshot.connectionState == ConnectionState.waiting) {
-          //       return Center(child: CircularProgressIndicator());
-          //     } else if (snapshot.hasError) {
-          //       return Center(child: Text('Error: ${snapshot.error}'));
-          //     } else if (snapshot.hasData) {
-          //       List<Exercise> exercises = snapshot.data!;
-          //       return Positioned(
-          //         top: 210,
-          //         right: 5,
-          //         left: 5,
-          //         child: Container(
-          //           height: 500,
-          //           child: SingleChildScrollView(
-          //             child: Column(
-          //               children: exercises.map(
-          //                 (exercise) {
-          //                   return Container(
-          //                     width: MediaQuery.of(context).size.width * 0.90,
-          //                     margin:
-          //                         const EdgeInsets.symmetric(horizontal: 5.0),
-          //                     child: ExerciseCard(
-          //                       id: exercise.id.toString(),
-          //                       nameExercise: exercise.name,
-          //                       repitions: exercise.numSet,
-          //                       sets: exercise.numSet,
-          //                       parts: exercise.parts,
-          //                       author: "NOBODY",
-          //                       image: exercise.imageUrl,
-          //                       video: exercise.videoUrl,
-          //                     ),
-          //                   );
-          //                 },
-          //               ).toList(),
-          //             ),
-          //           ),
-          //         ),
-          //       );
-          //     } else {
-          //       return Center(child: Text('No data available'));
-          //     }
-          //   },
-          // ),
           Positioned(
             left: 20,
             right: 20,
             bottom: 15,
             child: ElevatedButton(
-              onPressed: createExercise,
+              onPressed: () {
+                createExercise();
+                resetExercise();
+              },
               style: ElevatedButton.styleFrom(
                 fixedSize: Size(300, 5),
                 foregroundColor: Colors.white,
@@ -409,24 +387,3 @@ class _ExerciseLibraryState extends State<ExerciseLibrary> {
     );
   }
 }
-
-
-
-// FutureBuilder<List<Exercise>>(
-//           future: _exercisesFuture,
-//           builder: (context, snapshot) {
-//             if (snapshot.connectionState == ConnectionState.waiting) {
-//               return Center(child: CircularProgressIndicator());
-//             } else if (snapshot.hasError) {
-//               return Center(child: Text('Error: ${snapshot.error}'));
-//             } else if (snapshot.hasData) {
-//               List<Exercise> exercises = snapshot.data!;
-//               return 
-
-
-              
-//             } else {
-//               return Center(child: Text('No data available'));
-//             }
-//           },
-//         ),

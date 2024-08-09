@@ -3,8 +3,7 @@ import 'package:frontend/account.dart';
 import 'package:http/http.dart' as http;
 
 class AccountsApiService {
-  // static const String baseUrl = 'http://127.0.0.1:8000/api/accounts/register/';
-  static const String baseUrl = 'http://192.168.1.2:8000/api/accounts/';
+  static const String baseUrl = 'http://192.168.1.8:8000/api/accounts/';
 
   // Example POST request
   static Future<Map<String, dynamic>> registerUser(

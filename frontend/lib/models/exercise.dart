@@ -1,8 +1,13 @@
 import 'dart:convert';
 
+import 'package:frontend/models/dataset.dart';
+import 'package:frontend/models/model.dart';
+
 class Exercise {
   final int id;
   final String name;
+  final int account;
+
   final String description;
   final String intensity;
   final int estimatedTime;
@@ -15,7 +20,11 @@ class Exercise {
   final bool isActive;
   final bool isCustom;
   final String parts;
-  final int account;
+  final List<Dataset> datasets;
+  final Model model;
+  final String madeBy;
+  final bool isFavorite;
+
 
   Exercise({
     required this.id,
@@ -33,9 +42,14 @@ class Exercise {
     required this.isCustom,
     required this.parts,
     required this.account,
+    required this.datasets,
+    required this.model,
+    required this.madeBy,
+    required this.isFavorite,
+
   });
 
-  static const String baseUrl = "http://192.168.1.2:8000"; // Your base URL
+  static const String baseUrl = "http://192.168.1.8:8000"; // Your base URL
 
   factory Exercise.fromJson(Map<String, dynamic> json) {
     return Exercise(
@@ -53,7 +67,15 @@ class Exercise {
       isActive: json['is_active'],
       isCustom: json['is_custom'],
       parts: json['parts'],
-      account: json['account'],
+      account: json['account']['id'],
+      datasets: (json['datasets'] as List)
+          .map((item) => Dataset.fromJson(item))
+          .toList(),
+      model: (json['model'] as List)
+          .map((item) => Model.fromJson(item))
+          .toList()[0],
+      madeBy: json['account']['username'],
+      isFavorite:json['is_favorited']
     );
   }
 }

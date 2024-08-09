@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/models/exercise.dart';
+import 'package:frontend/provider/provider.dart';
 import 'package:frontend/screens/workout/workout_data_management.dart';
 import 'package:frontend/screens/workout/create_workout_details.dart';
 import 'package:frontend/screens/dataCollection/p1_base_collection.dart';
@@ -14,9 +15,9 @@ import 'package:frontend/widgets/navigation_drawer.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 class PickExercise extends ConsumerStatefulWidget {
-  int workoutID;
+  final bool isEdit;
   PickExercise({
-    this.workoutID = 0,
+    this.isEdit = false,
     super.key,
   });
 
@@ -26,17 +27,18 @@ class PickExercise extends ConsumerStatefulWidget {
 
 class _PickExerciseState extends ConsumerState<PickExercise> {
   List<String> _bodyPart = ['All', 'Two', 'Three', 'Four'];
-  List<String> _workoutType = ['All', 'Custom', 'Premade', 'Four'];
+  List<String> intensity = ['All', 'Custom', 'Premade', 'Four'];
   List<String> _favorite = ['All', 'Favorite', 'Non-Favorite'];
 
   late String _selectedItemPart = _bodyPart[0];
-  late String _selectedItemType = _workoutType[0];
+  late String selectedIntensity = intensity[0];
   late String _selectedItemFavorite = _favorite[0];
 
   late List<int> pickedExercise;
-  late List<int> baseExerciseList;
 
-  late Future<List<Exercise>> _exercisesFuture;
+  // late Future<List<Exercise>> _exercisesFuture;
+  List<Exercise> _exercisesFuture = [];
+
   late Future<List<Exercise>> _currentExercisesFuture;
 
   final PageController _pageController = PageController();
@@ -44,7 +46,7 @@ class _PickExerciseState extends ConsumerState<PickExercise> {
   @override
   void initState() {
     super.initState();
-    _exercisesFuture = ExerciseApiService.fetchExercises();
+    // _exercisesFuture = ExerciseApiService.fetchExercises();
   }
 
   void initExerciseList() {
@@ -54,14 +56,17 @@ class _PickExerciseState extends ConsumerState<PickExercise> {
   }
 
   void createExercise() {
-    Navigator.push(
+    int count = 0;
+    Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(
-          builder: (context) => CreateWorkout(
-                name: ref.read(name),
-                description: ref.read(description),
-                difficulty: ref.read(difficulty),
-              )),
+        builder: (context) => CreateWorkout(
+          isEdit: widget.isEdit,
+        ),
+      ),
+      (Route<dynamic> route) {
+        return count++ >= 2;
+      },
     );
   }
 
@@ -70,9 +75,6 @@ class _PickExerciseState extends ConsumerState<PickExercise> {
       pickedExercise.contains(exerciseID)
           ? pickedExercise.remove(exerciseID)
           : pickedExercise.add(exerciseID);
-      ref.read(exerciseListProvider.notifier).state = pickedExercise;
-
-      print("ADDING--->${ref.watch(exerciseListProvider)},");
     });
   }
 
@@ -110,6 +112,8 @@ class _PickExerciseState extends ConsumerState<PickExercise> {
 
   @override
   Widget build(BuildContext context) {
+    _exercisesFuture = ref.watch(exerciseFetchProvider);
+
     initExerciseList();
     return Scaffold(
       backgroundColor: mainColor,
@@ -224,10 +228,10 @@ class _PickExerciseState extends ConsumerState<PickExercise> {
                           ),
                           height: 30,
                           width: MediaQuery.of(context).size.width * 0.29,
-                          child: dropDown(_workoutType, _selectedItemType,
+                          child: dropDown(intensity, selectedIntensity,
                               (String? newValue) {
                             setState(() {
-                              _selectedItemType = newValue!;
+                              selectedIntensity = newValue!;
                             });
                           }),
                         ),
@@ -303,23 +307,14 @@ class _PickExerciseState extends ConsumerState<PickExercise> {
             left: 5,
             child: Container(
               height: 500,
-              child: FutureBuilder<List<Exercise>>(
-                future: _exercisesFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Center(child: CircularProgressIndicator());
-                  } else if (snapshot.hasError) {
-                    return Center(child: Text('Error: ${snapshot.error}'));
-                  } else if (snapshot.hasData) {
-                    List<Exercise> exercises = snapshot.data!;
-                    return PageView(
+              child: PageView(
                       controller: _pageController,
                       children: <Widget>[
                         Container(
                           height: 500,
                           child: SingleChildScrollView(
                             child: Column(
-                              children: exercises.map(
+                              children: _exercisesFuture.map(
                                 (exercise) {
                                   return Container(
                                     width: MediaQuery.of(context).size.width *
@@ -329,18 +324,11 @@ class _PickExerciseState extends ConsumerState<PickExercise> {
                                     child: Stack(
                                       children: [
                                         ExerciseCard(
-                                          id: exercise.id.toString(),
-                                          nameExercise: exercise.name,
-                                          repitions: exercise.numSet,
-                                          sets: exercise.numSet,
-                                          parts: exercise.parts,
-                                          author: "NOBODY",
-                                          image: exercise.imageUrl,
-                                          video: exercise.videoUrl,
+                                          exercise: exercise,
                                         ),
                                         Positioned(
                                           bottom: 5,
-                                          left: 5,
+                                          right: 5,
                                           child: GestureDetector(
                                             onTap: () {
                                               addRemoveExercise(exercise.id);
@@ -368,7 +356,7 @@ class _PickExerciseState extends ConsumerState<PickExercise> {
                           height: 500,
                           child: SingleChildScrollView(
                             child: Column(
-                              children: exercises.map(
+                              children: _exercisesFuture.map(
                                 (exercise) {
                                   return pickedExercise.contains(exercise.id)
                                       ? Container(
@@ -381,23 +369,15 @@ class _PickExerciseState extends ConsumerState<PickExercise> {
                                           child: Stack(
                                             children: [
                                               ExerciseCard(
-                                                id: exercise.id.toString(),
-                                                nameExercise: exercise.name,
-                                                repitions: exercise.numSet,
-                                                sets: exercise.numSet,
-                                                parts: exercise.parts,
-                                                author: "NOBODY",
-                                                image: exercise.imageUrl,
-                                                video: exercise.videoUrl,
+                                                exercise: exercise,
                                               ),
                                               Positioned(
                                                 bottom: 5,
-                                                left: 5,
+                                                right: 5,
                                                 child: GestureDetector(
                                                   onTap: () {
                                                     addRemoveExercise(
                                                         exercise.id);
-                                                    setState(() {});
                                                   },
                                                   child: Icon(
                                                     Icons
@@ -417,59 +397,10 @@ class _PickExerciseState extends ConsumerState<PickExercise> {
                           ),
                         ),
                       ],
-                    );
-                  } else {
-                    return Center(child: Text('No data available'));
-                  }
-                },
-              ),
+                    ),
             ),
           ),
-          // FutureBuilder<List<Exercise>>(
-          //   future: _exercisesFuture,
-          //   builder: (context, snapshot) {
-          //     if (snapshot.connectionState == ConnectionState.waiting) {
-          //       return Center(child: CircularProgressIndicator());
-          //     } else if (snapshot.hasError) {
-          //       return Center(child: Text('Error: ${snapshot.error}'));
-          //     } else if (snapshot.hasData) {
-          //       List<Exercise> exercises = snapshot.data!;
-          //       return Positioned(
-          //         top: 210,
-          //         right: 5,
-          //         left: 5,
-          //         child: Container(
-          //           height: 500,
-          //           child: SingleChildScrollView(
-          //             child: Column(
-          //               children: exercises.map(
-          //                 (exercise) {
-          //                   return Container(
-          //                     width: MediaQuery.of(context).size.width * 0.90,
-          //                     margin:
-          //                         const EdgeInsets.symmetric(horizontal: 5.0),
-          //                     child: ExerciseCard(
-          //                       id: exercise.id.toString(),
-          //                       nameExercise: exercise.name,
-          //                       repitions: exercise.numSet,
-          //                       sets: exercise.numSet,
-          //                       parts: exercise.parts,
-          //                       author: "NOBODY",
-          //                       image: exercise.imageUrl,
-          //                       video: exercise.videoUrl,
-          //                     ),
-          //                   );
-          //                 },
-          //               ).toList(),
-          //             ),
-          //           ),
-          //         ),
-          //       );
-          //     } else {
-          //       return Center(child: Text('No data available'));
-          //     }
-          //   },
-          // ),
+
           Positioned(
             left: 20,
             right: 20,
@@ -489,24 +420,3 @@ class _PickExerciseState extends ConsumerState<PickExercise> {
     );
   }
 }
-
-
-
-// FutureBuilder<List<Exercise>>(
-//           future: _exercisesFuture,
-//           builder: (context, snapshot) {
-//             if (snapshot.connectionState == ConnectionState.waiting) {
-//               return Center(child: CircularProgressIndicator());
-//             } else if (snapshot.hasError) {
-//               return Center(child: Text('Error: ${snapshot.error}'));
-//             } else if (snapshot.hasData) {
-//               List<Exercise> exercises = snapshot.data!;
-//               return 
-
-
-              
-//             } else {
-//               return Center(child: Text('No data available'));
-//             }
-//           },
-//         ),

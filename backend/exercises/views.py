@@ -1,25 +1,186 @@
+import os
 from django.shortcuts import render
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from .serializer import ExerciseSerializer
+from models.models import Dataset, Model
+from modelTrainingProcess.mainTraining import trainModel
+from models.serializer import DatasetSerializer, ModelSerializer
+
+from .serializer import AddExerciseSerializer, ExerciseSerializer
 from .models import Exercise
+
+from django.core.files import File
+from django.conf import settings
+
 
 @api_view(['POST'])
 def add(request):
     if request.method == 'POST':
-        serializer = ExerciseSerializer(data=request.data)
+        exercise_serializer = AddExerciseSerializer(data=request.data)
         print(request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        if exercise_serializer.is_valid():           
+            positive_dataset = request.FILES.get("positiveDataset") 
+            negative_dataset = request.FILES.get("negativeDataset") 
+
+            exercise_serializer.save()
+            exerciseID = exercise_serializer.instance.id
+
+            positive_data = {
+                "exercise": exerciseID,
+                "dataset": positive_dataset,
+                "isPositive": True
+            }
+                
+
+            negative_data = {
+                "exercise": exerciseID,
+                "dataset": negative_dataset,
+                "isPositive": False
+            }
+
+            positive_serializer = DatasetSerializer(data=positive_data)
+            negative_serializer = DatasetSerializer(data=negative_data)
+
+            if positive_serializer.is_valid():
+                if negative_serializer.is_valid():
+                    positive_serializer.save()
+                    negative_serializer.save()
 
 
-# this is for exercise card in exercise library
+                    positive_dataset_training = positive_serializer.instance.dataset.path
+                    negative_dataset_training = negative_serializer.instance.dataset.path
+
+                    positive_dataset_training = os.path.join('media', positive_dataset_training)
+                    negative_dataset_training = os.path.join('media', negative_dataset_training)
+
+
+
+                    trained_model = trainModel(positive_dataset_training,negative_dataset_training)
+                    trained_model =trained_model.replace("media/","")
+                    file_path = os.path.join(settings.MEDIA_ROOT, trained_model)
+                    print("file_path--->",file_path)
+
+
+
+                    model_data = Model(
+                        exercise = exercise_serializer.instance,
+                        valLoss = 0,
+                        valAccuracy = 0,
+                    )
+                    with open(file_path, 'rb') as file:
+                        django_file = File(file)
+                        model_data.model.save(os.path.basename(file_path), django_file)
+                    
+                    model_data.save()
+
+
+                    # else:
+                    #     return Response(model_serializer.errors, status=status.HTTP_400_BAD_REQUEST)                            
+                else:
+                    return Response(negative_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                return Response(positive_serializer.errors, status=status.HTTP_400_BAD_REQUEST)   
+            final_serializer = ExerciseSerializer(exercise_serializer.instance,context={'account_id': exercise_serializer.instance.account.id})
+            
+
+
+            return Response( final_serializer.data, status=status.HTTP_201_CREATED)
+        return Response(exercise_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+@api_view(['POST'])
+def edit(request,exercise_id):
+    if request.method == 'POST':
+        exercise_edit = Exercise.objects.get(id=exercise_id)
+        negative_dataset_edit = Dataset.objects.get(exercise=exercise_id, isPositive=True)
+        positive_dataset_edit = Dataset.objects.get(exercise=exercise_id, isPositive=False)
+        model_dataset_edit = Model.objects.get(exercise=exercise_id)
+        exercise_serializer = ExerciseSerializer(exercise_edit, data=request.data, partial=True)
+
+        positive_dataset = request.FILES.get("positiveDataset") 
+        negative_dataset = request.FILES.get("negativeDataset") 
+
+
+        if positive_dataset is not None:
+            positive_data = {
+                "exercise": exercise_id,
+                "dataset": positive_dataset,
+                "isPositive": True
+            }
+            positive_serializer_edit = DatasetSerializer(positive_dataset_edit, data=positive_data, partial=True)
+            if positive_serializer_edit.is_valid():
+                positive_serializer_edit.save()                    
+                positive_dataset_training = positive_serializer_edit.instance.dataset.path
+                positive_dataset_training = os.path.join('media', positive_dataset_training)
+            else:
+                return Response(positive_serializer_edit.errors, status=status.HTTP_400_BAD_REQUEST)     
+        elif positive_dataset is  None:
+            positive_dataset_training = positive_dataset_edit.dataset.path
+            positive_dataset_training = os.path.join('media', positive_dataset_training)
+
+            print("poooopiez")
+            print("positive_dataset_training-->",positive_dataset_training)
+        
+        else:
+            return Response(positive_serializer_edit.errors, status=status.HTTP_400_BAD_REQUEST)     
+           
+        
+                   
+        if negative_dataset is not None:
+            negative_data = {
+                "exercise": exercise_id,
+                "dataset": negative_dataset,
+                "isPositive": False
+            }
+            negative_serializer_edit = DatasetSerializer(negative_dataset_edit, data=negative_data, partial=True)
+            if negative_serializer_edit.is_valid():
+                negative_serializer_edit.save()
+                negative_dataset_training = negative_serializer_edit.instance.dataset.path
+                negative_dataset_training = os.path.join('media', negative_dataset_training)
+            else:
+                return Response(negative_serializer_edit.errors, status=status.HTTP_400_BAD_REQUEST)   
+        elif negative_dataset is None:
+            negative_dataset_training = negative_dataset_edit.dataset.path
+            negative_dataset_training = os.path.join('media', negative_dataset_training)
+        else:
+            return Response(positive_serializer_edit.errors, status=status.HTTP_400_BAD_REQUEST)  
+            
+        
+        if negative_dataset is not None or positive_dataset is not None :
+            trained_model = trainModel(positive_dataset_training,negative_dataset_training)
+            
+            model_data = {"exercise" : exercise_id,
+                    "model" : trained_model,
+                    "valLoss" : 0,
+                    "valAccuracy" : 0,
+                    }
+            model_serializer_edit = ModelSerializer(model_dataset_edit, data=model_data, partial=True)
+            if model_serializer_edit.is_valid():                        
+                model_serializer_edit.save()
+            else:
+                return Response(model_serializer_edit.errors, status=status.HTTP_400_BAD_REQUEST)   
+
+                          
+        if exercise_serializer.is_valid():  
+            exercise_serializer.save()
+
+        else:
+            return Response(exercise_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+     
+        return Response(exercise_serializer.data, status=status.HTTP_201_CREATED)
+        
+
+
+
+
+
+
 @api_view(['GET'])
-def getExerciseCard(request):
+def getExerciseCard(request,account_id):
     name = request.GET.get("name")
     parts = request.GET.get("parts")
     intensity = request.GET.get("intensity")
@@ -39,9 +200,14 @@ def getExerciseCard(request):
     if tag:
         exercises = exercises.filter(tag=tag)
 
-    serializer = ExerciseSerializer(exercises, many=True)
+    serializer = ExerciseSerializer(exercises,context={'account_id': account_id}, many=True)
+    
         
     return Response(serializer.data)
+
+
+
+
 
 @api_view(['GET'])    
 def getExercise(request):
@@ -50,6 +216,9 @@ def getExercise(request):
         exercises = Exercise.objects.filter(id=id)
         serializer = ExerciseSerializer(exercises, many=True)
     return Response(serializer.data)
+
+
+
 
 @api_view(['DELETE'])
 def deleteExercise(request,exercise_id):

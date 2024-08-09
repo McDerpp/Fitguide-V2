@@ -319,10 +319,9 @@ def convert_tf_to_tflite(tf_model,input_shape,test_dataset,name,id_number,valida
   # folder_path = os.path.join('media', "TFLiteModels")
   # folder_path = os.path.join('media', "models")
 
-  temp = 'converted_model_'
+  temp = 'CM'
 
   temp3 = temp + str(name) + id_number + "(loss_"+ str(round(validation_loss,3)) +")" + "(acc_"+  str(round(validation_accuracy,3 )) + ")" + '.tflite'
-  # final_path = folder_path + temp3
   final_path = os.path.join('media/models', temp3)
 
   print("path is -->",final_path )

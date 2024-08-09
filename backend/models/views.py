@@ -9,10 +9,6 @@ from rest_framework.response import Response
 
 from .serializer import DatasetSerializer,ModelSerializer
 
-
-
-
-
 from django.views.decorators.csrf import csrf_exempt
 from django.http import FileResponse, HttpResponse, HttpResponseNotFound, JsonResponse, StreamingHttpResponse
 import json
@@ -27,9 +23,6 @@ from models.models import Dataset, Model
 from modelTrainingProcess.mainTraining import trainModel
 
 from django.contrib.sessions.backends.db import SessionStore
-
-
-
 
 from django.shortcuts import render
 from rest_framework import status

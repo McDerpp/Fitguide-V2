@@ -5,8 +5,14 @@ import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 import 'coordinates_translator.dart';
 
 class PosePainter extends CustomPainter {
-  PosePainter(this.poses, this.imageSize, this.rotation,
-      this.cameraLensDirection, this.executionState, this.ignoreCoordinates);
+  PosePainter(
+    this.poses,
+    this.imageSize,
+    this.rotation,
+    this.cameraLensDirection,
+    this.executionState,
+    this.ignoreCoordinates,
+  );
 
   final List<Pose> poses;
   final Size imageSize;

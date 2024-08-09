@@ -7,30 +7,43 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_animation_progress_bar/flutter_animation_progress_bar.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/misc/logicFunction/isolateProcessPDV.dart';
 import 'package:frontend/misc/pose/detector_view.dart';
 import 'package:frontend/misc/pose/pose_painter.dart';
+import 'package:frontend/models/exercise.dart';
 
 import 'package:frontend/provider/main_settings.dart';
+import 'package:frontend/screens/coreFunctionality/globalVariables.dart';
+import 'package:frontend/screens/exercise/exercise.dart';
+import 'package:frontend/screens/inferencing/inferencing_end.dart';
 import 'package:frontend/widgets/dialog_box_notif.dart';
 
 import 'package:google_ml_kit/google_ml_kit.dart';
 
 import 'package:circular_countdown_timer/circular_countdown_timer.dart';
+import 'package:video_player/video_player.dart';
 
 import '../../provider/data_collection_provider.dart';
-import '../../provider/global_variable_provider.dart';
+// import '../../provider/global_variable_provider.dart';
 import '../coreFunctionality/mainUISettings.dart';
 
+import 'dart:io';
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
+
 class InferencingSeamless extends ConsumerStatefulWidget {
-  final List<Map<String, dynamic>> exerciseList;
+  // final List<Map<String, dynamic>> exercise;
+  final List<Exercise> exercise;
+
   // final List<Exercise> exerciseDetailList;
 
-  const InferencingSeamless({
+  const InferencingSeamless(
+    this.exercise, {
     super.key,
-    required this.exerciseList,
+    // required this.exercise,
     // required this.exerciseDetailList,
   });
 
@@ -49,7 +62,9 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
   String nameOfExercise = "";
   File model = File("");
   File video = File("");
-  List<String> ignoredCoordinates = [];
+  // List<String> ignoredCoordinates = [];
+  List<int> ignoredCoordinates = [];
+
   int numberOfExecution = 0;
   int setsNeeded = 0;
   int restDuration = 0;
@@ -59,6 +74,9 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
   RootIsolateToken rootIsolateTokenNormalization = RootIsolateToken.instance!;
   RootIsolateToken rootIsolateTokenNoMovement = RootIsolateToken.instance!;
   RootIsolateToken rootIsolateTokenInferencing = RootIsolateToken.instance!;
+
+  List<List<Pose>> poseQueue = [];
+  List<List<double>> queueNormalizedListQueue = [];
 
   List<double> prevCoordinates = [];
   List<double> currentCoordinates = [];
@@ -82,6 +100,8 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
   int noMovementCtr = 0;
   int showPreviewCtr = 0;
 
+  bool isExerciseInit = false;
+
   // ---------------------countdown variables----------------------------------------------------------
 
   List<double> translatedCoordinates = [];
@@ -100,14 +120,18 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
   int bufferCtr = 0;
 
   List<bool> inferenceBuffer = [];
+
+  late VideoPlayerController _controller;
+  late double scale;
+
   // late int inferencingBuffer;
   // ---------------------inferencing data mode variables----------------------------------------------------------
   int inferenceCorrectCtr = 0;
   int setsAchieved = 0;
-  int exerciseListCtr = 0;
+  int exerciseCtr = 0;
 
-  late int maxExerciseList;
-  late List<Map<String, dynamic>> tempExerciseList;
+  late int maxexercise;
+  late List<Map<String, dynamic>> tempexercise;
 
   // ---------------------countdown variables----------------------------------------------------------
   final CountDownController controller = CountDownController();
@@ -116,19 +140,73 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
   bool countDowntoPerform = false;
   bool checkCountDowntoPerform = false;
 
-  String dynamicCountDownText = 'Ready';
-  Color dynamicCountDownColor = secondaryColor;
-
-  // late int inputSequenceNeeded;
-
   @override
   void initState() {
     super.initState();
-    ref.watch(showPreviewProvider.notifier).state = true;
+    // ref.watch(showPreviewProvider.notifier).state = true;
   }
 
-  List<List<Pose>> poseQueue = [];
-  List<List<double>> queueNormalizedListQueue = [];
+  Future<File> downloadFile(String url, String filename) async {
+    final response = await http.get(Uri.parse(url));
+    if (response.statusCode == 200) {
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/$filename');
+      return file.writeAsBytes(response.bodyBytes);
+    } else {
+      throw Exception('Failed to download file');
+    }
+  }
+
+  void initNextExercuse() async {
+    if (isExerciseInit == false) {
+      isExerciseInit = true;
+      maxexercise = widget.exercise.length;
+      buffer = ref.watch(bufferProvider);
+
+      try {
+        if (exerciseCtr < maxexercise) {
+          nameOfExercise = widget.exercise[exerciseCtr].name;
+          model = await downloadFile(
+              widget.exercise[exerciseCtr].model.model, 'temp_model');
+          ignoredCoordinates = widget.exercise[exerciseCtr].ignoreCoordinates;
+          setsNeeded = widget.exercise[exerciseCtr].numSet;
+          numberOfExecution = widget.exercise[exerciseCtr].numExecution;
+          initializeVideo(widget.exercise[exerciseCtr].videoUrl);
+        } else {
+          // Navigator.pushReplacement(
+          //   context,
+          //   MaterialPageRoute(
+          //     builder: (context) => inferencingEnd(exercise: widget.exercise),
+          //   ),
+          // );
+        }
+      } catch (error) {}
+      setState(() {});
+    }
+  }
+
+  void isDoneNavigate() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => inferencingEnd(exercise: widget.exercise),
+      ),
+    );
+  }
+
+  void initializeVideo(String video) {
+    _controller = VideoPlayerController.networkUrl(Uri.parse(video))
+      ..setLooping(true)
+      ..initialize().then((_) {
+        setState(() {
+          _controller.play();
+        });
+      }).catchError((error) {});
+
+    scale = 1 /
+        (_controller!.value.aspectRatio *
+            MediaQuery.of(context).size.aspectRatio);
+  }
 
   final PoseDetector _poseDetector =
       PoseDetector(options: PoseDetectorOptions());
@@ -142,6 +220,8 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
   void dispose() async {
     _canProcess = false;
     _poseDetector.close();
+
+    _controller.dispose();
     super.dispose();
   }
 
@@ -165,7 +245,8 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
       Map<String, dynamic> dataNormalizationIsolate = {
         'inputImage': poses.first.landmarks.values,
         'token': rootIsolateTokenNormalization,
-        'coordinatesIgnore': igrnoreCoordinatesList,
+        'coordinatesIgnore': ignoredCoordinates,
+        // 'coordinatesIgnore': ref.read(ignoreCoordinatesProvider),
       };
       queueNormalizeData.add(dataNormalizationIsolate);
     } catch (error) {}
@@ -264,23 +345,7 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
               restState == false) {
             nowPerforming = true;
           }
-
-//for recording metrics
-          // setState(() {
-          //   try {
-          //     avgFrames = execTotalFrames / numExec;
-          //     resultAvgFrames = avgFrames.toStringAsFixed(2);
-          //     avgFrames = double.parse(resultAvgFrames);
-          //   } catch (error) {
-          //     avgFrames = 0;
-          //   }
-          // });
-        } else {
-          // setState(() {
-          //   dynamicText = 'movement detected';
-          //   dynamicCtr = noMovementCtr.toString();
-          // });
-        }
+        } else {}
       }).catchError((error) {});
     }
 // =====================================================================================================================================================
@@ -296,19 +361,14 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
 
 // if all the sets have been performed
       if (setsAchieved == setsNeeded) {
-        exerciseListCtr++;
+        isExerciseInit = false;
+        exerciseCtr++;
 
-        if (exerciseListCtr < maxExerciseList) {
+        if (exerciseCtr < maxexercise) {
           // dialogBoxNotif(context, 3, "aasetsdaf");
           ref.watch(showPreviewProvider.notifier).state = true;
         }
         setsAchieved = 0;
-        // setState(() {
-        //   if (exerciseListCtr <= maxExerciseList) {
-        //     exerciseListCtr++;
-        //   }
-        //   setsAchieved = 0;
-        // });
       }
     }
 
@@ -318,13 +378,6 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
         if (inferencingList.isNotEmpty &&
             inferencingList.length >= tensorInputNeeded) {
           executionStateResult = 2;
-
-          // setState(() {
-          //   executionStateResult = 2;
-          // });
-          dynamicCountDownText = 'collected';
-          dynamicCountDownColor = secondaryColor;
-          // coordinatesData.add(inferencingList);
 
           inferencingData = {
             'coordinatesData': inferencingList,
@@ -350,9 +403,6 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
     if (queueInferencingData.isNotEmpty && nowPerforming == true) {
       inferencingCoordinatesData(queueInferencingData.elementAt(0), model)
           .then((value) {
-        // setState(() {
-        //   inferenceValue = value[1];
-        // });
         inferenceValue = value[1];
 
         if (inferenceBuffer.length == 2) {
@@ -372,17 +422,11 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
             }
           }
           if (ref.watch(showPreviewProvider) == true) {
-            // setState(() {
-            // ref.watch(showPreviewProvider.notifier).state = false;
-            // dialogBoxNotif(context, 2, "aasetsdaf");
-            // });
             ref.watch(showPreviewProvider.notifier).state = false;
             dialogBoxNotif(context, 2, "aasetsdaf");
             showPreviewCtr = 0;
           }
-          dynamicCountDownColor = const Color.fromARGB(255, 3, 104, 8);
         } else {
-          dynamicCountDownColor = const Color.fromARGB(255, 255, 0, 0);
           if (ref.watch(showPreviewProvider) == false) {
             showPreviewCtr++;
           }
@@ -392,12 +436,6 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
             dialogBoxNotif(context, 1, "aasetsdaf");
 
             ref.watch(showPreviewProvider.notifier).state = true;
-
-            // setState(
-            //   () {
-            //     ref.watch(showPreviewProvider.notifier).state = true;
-            //   },
-            // );
           }
         }
         if (queueInferencingData.isNotEmpty) {
@@ -417,7 +455,7 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
           _cameraLensDirection,
           executionStateResult,
           //=========================================================================> NEEDS TO BE INITIALIZED FIRST FOR INFERENCING TO CHECK THE IGNORE COORDINATES
-          ref.watch(ignoreCoordinatesProvider));
+          ref.read(ignoreCoordinatesProvider));
       _customPaint = CustomPaint(painter: painter);
     } else {
       _text = 'Poses found: ${poses.length}\n\n';
@@ -557,17 +595,8 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
           onChange: (String timeStamp) {},
           timeFormatterFunction: (defaultFormatterFunction, duration) {
             return Function.apply(defaultFormatterFunction, [duration]);
-
-            // if (nowPerforming == true) {
-            //   return dynamicCountDownText;
-            // } else {
-            //   return Function.apply(defaultFormatterFunction, [duration]);
-            // }
           },
-        )
-        // countdownTimer(context, dynamicCountDownText,
-        //     dynamicCountDownColor, controller)
-        );
+        ));
   }
 
   @override
@@ -582,35 +611,7 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
     Widget displayError2;
 
     // exercise details------------------------------------------------------------
-    maxExerciseList = widget.exerciseList.length;
-    buffer = ref.watch(bufferProvider);
-
-    try {
-      if (exerciseListCtr < maxExerciseList) {
-        // ref.read(inputNumProvider.notifier).state =
-        //     widget.exerciseList[exerciseListCtr]['inputNum'];
-        nameOfExercise = widget.exerciseList[exerciseListCtr]['nameOfExercise'];
-        model = widget.exerciseList[exerciseListCtr]['modelPath'];
-        // video = widget.exerciseList[exerciseListCtr]['videoPath'];
-        ref.watch(videoPreviewProvider.notifier).state =
-            widget.exerciseList[exerciseListCtr]['videoPath'];
-
-        ignoredCoordinates =
-            widget.exerciseList[exerciseListCtr]['ignoredCoordinates'];
-        // restDuration = widget.exerciseList[exerciseListCtr]['restDuration'];
-        setsNeeded = widget.exerciseList[exerciseListCtr]['setsNeeded'];
-        numberOfExecution =
-            widget.exerciseList[exerciseListCtr]['numberOfExecution'];
-      } else if (isEnd == false) {
-        isEnd = true;
-        Navigator.pop(context);
-
-        dialogBoxNotif(context, 2, "aasetsdaf",
-            exerciseProgram: widget.exerciseList);
-      }
-    } catch (error) {}
-
-    // inferencingBuffer = (tensorInputNeeded * 0.5).toInt();
+    initNextExercuse();
 
     final luminanceValue = ref.watch(luminanceProvider);
 
@@ -632,6 +633,11 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
       displayError2 = displayErrorPose2(context, 0.0);
     }
 
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (isEnd == true) {
+        isDoneNavigate();
+      }
+    });
     return Scaffold(
       body: Stack(
         children: [
@@ -644,19 +650,48 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
             ),
           ),
 
+          Center(
+            child: ref.watch(showPreviewProvider) == true
+                ? Transform.scale(
+                    scaleX: scale * 0.67,
+                    scaleY: scale * 0.67,
+                    alignment: Alignment.center,
+                    child: AspectRatio(
+                      aspectRatio: _controller.value.aspectRatio,
+                      child: VideoPlayer(_controller),
+                    ),
+                  )
+                : const SizedBox(),
+          ),
+
+          // Align(
+          //   alignment: Alignment.topCenter,
+          //   child: SizedBox(
+          //     width: screenWidth,
+          //     height: screenHeight,
+          //     child: DetectorView(
+          //       title: 'Pose Detector',
+          //       customPaint: _customPaint,
+          //       text: _text,
+          //       onImage: _processImage,
+          //       initialCameraLensDirection: _cameraLensDirection,
+          //       onCameraLensDirectionChanged: (value) =>
+          //           _cameraLensDirection = value,
+          //     ),
+          //   ),
+          // ),
+
           Align(
             alignment: Alignment.topCenter,
             child: SizedBox(
-              width: screenWidth, // Set a specific width
-              height: screenHeight, // Set a specific height or use constraints
+              width: screenWidth,
+              height: screenHeight,
               child: DetectorView(
                 title: 'Pose Detector',
-                customPaint: _customPaint,
+                // customPaint: _customPaint,
                 text: _text,
                 onImage: _processImage,
                 initialCameraLensDirection: _cameraLensDirection,
-                onCameraLensDirectionChanged: (value) =>
-                    _cameraLensDirection = value,
               ),
             ),
           ),
@@ -664,12 +699,6 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
 // -----------------------------------------------------------------------------------------------------------[Current Exercise Description]
 
           displayCountdownTimer,
-
-          // Positioned(
-          //   bottom: screenHeight * .025,
-          //   left: screenWidth * .07,
-          //   child:
-          // ),
 
           Positioned(
             bottom: screenHeight * 0.15,
@@ -680,7 +709,7 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
                 // crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   buildContainerList(
-                      widget.exerciseList.length, exerciseListCtr, context,
+                      widget.exercise.length, exerciseCtr, context,
                       spaceModifier: 0.8),
                 ],
               ),
@@ -730,11 +759,17 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
                               // Navigator.push(
                               //   context,
                               //   MaterialPageRoute(
-                              //     builder: (context) => ExerciseDetailsPage(
-                              //         exercise: widget
-                              //             .exerciseDetailList[exerciseListCtr]),
+                              //     builder: (context) => ExerciseScreen(
+                              //         exercise: widget.exercise[exerciseCtr]),
                               //   ),
                               // );
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      inferencingEnd(exercise: widget.exercise),
+                                ),
+                              );
                             },
                             child: const Padding(
                               padding: EdgeInsets.all(12),
@@ -810,18 +845,6 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
               },
             ),
           ),
-          // Align(
-          //   alignment: Alignment(1.0, 0.7),
-          //   child: IconButton(
-          //     icon: Icon(
-          //       Icons.question_mark,
-          //       color: tertiaryColor,
-          //     ),
-          //     onPressed: () {
-          //       Navigator.pop(context);
-          //     },
-          //   ),
-          // ),
 
 // -----------------------------------------------------------------------------------------------------------[Error Indicator Pose]
           Positioned(
@@ -861,7 +884,19 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
               ),
             ),
           ),
-
+          Center(
+            child: ElevatedButton(
+              onPressed: () {
+                inferenceCorrectCtr++;
+              },
+              style: ElevatedButton.styleFrom(
+                fixedSize: Size(300, 5),
+                foregroundColor: Colors.white,
+                backgroundColor: tertiaryColor,
+              ),
+              child: const Text('Test execution'),
+            ),
+          ),
 // -----------------------------------------------------------------------------------------------------------[Progress Container]
         ],
       ),

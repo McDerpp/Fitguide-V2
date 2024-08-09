@@ -5,13 +5,17 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/account.dart';
 import 'package:frontend/models/exercise.dart';
-import 'package:frontend/screens/upload_video.dart';
+import 'package:frontend/models/workout.dart';
+import 'package:frontend/widgets/upload_image.dart';
 import 'package:frontend/screens/workout/create_workout_exercise.dart';
 import 'package:frontend/provider/main_settings.dart';
+import 'package:frontend/screens/workout/workout.dart';
 
 import 'package:frontend/screens/workout/workout_data_management.dart';
+import 'package:frontend/screens/workout/workouts_library.dart';
 import 'package:frontend/services/exercise.dart';
 import 'package:frontend/services/workout.dart';
+import 'package:frontend/widgets/dialog_box.dart';
 import 'package:frontend/widgets/header.dart';
 import 'package:frontend/widgets/input_field.dart';
 import 'package:frontend/widgets/navigation_drawer.dart';
@@ -20,20 +24,10 @@ import 'package:image_picker/image_picker.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 
 class CreateWorkout extends ConsumerStatefulWidget {
-  final String id;
-  final String name;
-  final String difficulty;
-  final String description;
-  final String imageUrl;
   final bool isEdit;
 
   const CreateWorkout({
     super.key,
-    this.name = "",
-    this.id = "",
-    this.difficulty = "Easy",
-    this.description = "",
-    this.imageUrl = "",
     this.isEdit = false,
   });
 
@@ -43,7 +37,11 @@ class CreateWorkout extends ConsumerStatefulWidget {
 
 class _CreateWorkoutState extends ConsumerState<CreateWorkout> {
   List<String> _intensity = ['Easy', 'Normal', 'Hard', 'Advance'];
-  late String _selectedItemPart = _intensity[0];
+  List<String> _type = ['Muscle Buildup', 'Cardio'];
+
+  late String _selectedItemIntensity;
+  late String _selectedItemType;
+
   final TextEditingController workoutNameController = TextEditingController();
   final TextEditingController descriptionNameController =
       TextEditingController();
@@ -54,6 +52,8 @@ class _CreateWorkoutState extends ConsumerState<CreateWorkout> {
 
   late Future<List<Exercise>> _currentExercisesFuture;
   List<int> pickedExercise = [];
+  List<int> toRemoveExercise = [];
+  List<int> toAddExercise = [];
 
   late Future<List<Exercise>> _exercisesFuture;
   final PageController _pageController = PageController();
@@ -61,112 +61,217 @@ class _CreateWorkoutState extends ConsumerState<CreateWorkout> {
   @override
   void initState() {
     super.initState();
-    if (widget.id != "") {
-      WorkoutApiService.fetchExerciseWorkouts(int.parse(widget.id));
-      _exercisesFuture = ExerciseApiService.fetchExercises();
-    }
+    _selectedItemIntensity = _intensity[0];
+    _selectedItemType = _type[0];
     initEdit();
   }
 
-  Future<void> initializeExerciseList() async {
-    if (widget.isEdit == true) {
-      if (ref.read(initExerciseEdit) == false) {
-        _currentExercisesFuture =
-            WorkoutApiService.fetchExerciseWorkouts(int.parse(widget.id));
-        ref.read(initExerciseEdit.notifier).state = true;
-        List<Exercise> workout = await _currentExercisesFuture;
-        for (Exercise exercise in workout) {
-          pickedExercise.add(exercise.id);
-        }
-        ref.read(baseExerciseListProvider.notifier).state = pickedExercise;
-
-        ref.read(exerciseListProvider.notifier).state = pickedExercise;
-      }
-    }
-  }
-
-  void initEdit() {
-    setState(() {
-      workoutNameController.text = widget.name;
-      descriptionNameController.text = widget.description;
-      _selectedItemPart = widget.difficulty;
-    });
-  }
-
-  void saveChanges() {
-    ref.read(name.notifier).state = workoutNameController.text;
-    ref.read(description.notifier).state = descriptionNameController.text;
-    ref.read(difficulty.notifier).state = _selectedItemPart;
-    ref.read(workoutID.notifier).state = widget.id;
-  }
-
-  Future<void> createExercise() async {
-    await initializeExerciseList();
-
-    saveChanges();
-    Navigator.push(
+  void validateInput(BuildContext context) {
+    showCustomDialog(
+      widthMultiplier: 0.5,
+      heightMultiplier: 0.25,
       context,
-      MaterialPageRoute(
-        builder: (context) => widget.id != ""
-            ? PickExercise(
-                workoutID: int.parse(widget.id),
+      Center(
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "Invalid Inputs:",
+                style: TextStyle(
+                  fontSize: 14,
+                  fontFamily: 'Roboto',
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              workoutNameController.text == ""
+                  ? const Text(
+                      "  - Enter a workout name",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontFamily: 'Roboto',
+                      ),
+                    )
+                  : const SizedBox(),
+              ref.read(imageProvider) == null
+                  ? const Text(
+                      "  - Select a workout image",
+                      style: TextStyle(
+                        fontSize: 14,
+                      ),
+                    )
+                  : const SizedBox(),
+              ref.read(exerciseListProvider).isEmpty
+                  ? const Text(
+                      "  - No exercise was added",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontFamily: 'Roboto',
+                      ),
+                    )
+                  : const SizedBox(),
+              const Spacer(),
+              Container(
+                width: MediaQuery.of(context).size.width,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    fixedSize: const Size(300, 5),
+                    foregroundColor: Colors.white,
+                    backgroundColor: tertiaryColor,
+                  ),
+                  child: const Text("Close"),
+                ),
               )
-            : PickExercise(),
-      ),
-    );
-  }
-
-  Future<void> createWorkout() async {
-    dynamic temp = await WorkoutApiService.sendWorkoutData(
-      accountId: int.parse(setup.id),
-      name: workoutNameController.text,
-      difficulty: _selectedItemPart,
-      description: descriptionNameController.text,
-      image: ref.read(imageProvider),
-    );
-
-    List<int> exerciseList = ref.read(exerciseListProvider);
-    for (int exercise in exerciseList) {
-      WorkoutApiService.addExerciseToWorkout(
-          exerciseID: exercise, workoutID: temp.id);
-    }
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PickExercise(
-          workoutID: int.parse(widget.id),
+            ],
+          ),
         ),
       ),
     );
   }
 
+  void addedWorkoutNotif(BuildContext context) {
+    showCustomDialog(
+      widthMultiplier: 0.5,
+      heightMultiplier: 0.25,
+      context,
+      Center(
+        child: Padding(
+          padding: EdgeInsets.all(8.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Succesfully created a workout",
+                style: TextStyle(
+                  fontSize: 14,
+                  fontFamily: 'Roboto',
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const Spacer(),
+              Container(
+                width: MediaQuery.of(context).size.width,
+                child: ElevatedButton(
+                  onPressed: () {
+                    navigateDone();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    fixedSize: Size(300, 5),
+                    foregroundColor: Colors.white,
+                    backgroundColor: tertiaryColor,
+                  ),
+                  child: Text("Close"),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void initEdit() {
+    setState(() {
+      workoutNameController.text = ref.read(name);
+      descriptionNameController.text = ref.read(description);
+      _selectedItemIntensity = ref.read(intensity);
+      _selectedItemType = ref.read(type);
+    });
+  }
+
+  Future<void> createExercise() async {
+    ref.read(name.notifier).state = workoutNameController.text;
+    ref.read(description.notifier).state = descriptionNameController.text;
+    ref.read(intensity.notifier).state = _selectedItemIntensity;
+    ref.read(type.notifier).state = _selectedItemType;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PickExercise(
+          isEdit: widget.isEdit,
+        ),
+      ),
+    );
+  }
+
+  Future<void> createWorkout() async {
+    if (workoutNameController.text == "" ||
+        ref.read(imageProvider) == null ||
+        ref.read(exerciseListProvider).isEmpty) {
+      validateInput(context);
+    } else {
+      Workout temp = await WorkoutApiService.sendWorkoutData(
+        ref: ref,
+        type: _selectedItemType,
+        accountId: int.parse(setup.id),
+        name: workoutNameController.text,
+        difficulty: _selectedItemIntensity,
+        description: descriptionNameController.text,
+        image: ref.read(imageProvider),
+      );
+      print(
+          "descriptionNameController.text--->${descriptionNameController.text}");
+      List<int> editedExercise = await ref.read(exerciseListProvider);
+
+      for (int exercise in editedExercise) {
+        WorkoutApiService.addExerciseToWorkout(
+            exerciseID: exercise, workoutID: temp.id);
+      }
+      addedWorkoutNotif(context);
+    }
+  }
+
+  Future<void> validateExerciseEdit() async {
+    List<int> baseExercise = await ref.read(baseExerciseListProvider);
+    List<int> editedExercise = await ref.read(exerciseListProvider);
+
+    for (int exercise in baseExercise) {
+      if (!editedExercise.contains(exercise)) {
+        WorkoutApiService.deleteExerciseToWorkout(
+            exerciseID: exercise, workoutID: int.parse(ref.read(workoutID)));
+        toRemoveExercise.add(exercise);
+      }
+    }
+    for (int exercise in editedExercise) {
+      if (!baseExercise.contains(exercise)) {
+        toAddExercise.add(exercise);
+
+        WorkoutApiService.addExerciseToWorkout(
+            exerciseID: exercise, workoutID: int.parse(ref.read(workoutID)));
+      }
+    }
+  }
+
   Future<void> editWorkout() async {
-    print("baseExerciseListProvider--->${ref.read(baseExerciseListProvider)}");
-    print("baseExerciseListProvider--->${ref.read(exerciseListProvider)}");
+    await validateExerciseEdit();
 
-    // dynamic temp = await WorkoutApiService.editWorkoutData(
-    //   accountId: int.parse(setup.id),
-    //   name: workoutNameController.text,
-    //   difficulty: _selectedItemPart,
-    //   description: descriptionNameController.text,
-    //   image: ref.read(imageProvider),
-    // );
+    dynamic temp = await WorkoutApiService.editWorkoutData(
+      ref: ref,
+      workoutId: int.parse(ref.read(workoutID)),
+      accountId: int.parse(setup.id),
+      name: workoutNameController.text,
+      difficulty: _selectedItemIntensity,
+      type: _selectedItemIntensity,
+      description: descriptionNameController.text,
+      image: ref.read(imageProvider),
+    );
+    navigateDone();
+  }
 
-    // List<int> exerciseList = ref.read(exerciseListProvider);
-    // for (int exercise in exerciseList) {
-    //   WorkoutApiService.addExerciseToWorkout(
-    //       exerciseID: exercise, workoutID: temp.id);
-    // }
-
-    // Navigator.push(
-    //   context,
-    //   MaterialPageRoute(
-    //     builder: (context) => PickExercise(
-    //       workoutID: int.parse(widget.id),
-    //     ),
-    //   ),
-    // );
+  void navigateDone() {
+    int count = 0;
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => const WorkoutLibrary()),
+      (Route<dynamic> route) {
+        return count++ >= 3;
+      },
+    );
   }
 
   Widget dropDown(List<String> inputList, String selectedItem,
@@ -234,34 +339,86 @@ class _CreateWorkoutState extends ConsumerState<CreateWorkout> {
                 InputField(
                     inputName: " Workout Name:",
                     textController: workoutNameController),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                Row(
                   children: [
-                    const Text(
-                      "  Intensity:",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w400,
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width * .32,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "  Intensity:",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              border: Border.all(
+                                color: Colors.white,
+                                width: 2.0,
+                              ),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            height: 40,
+                            width: MediaQuery.of(context).size.width * 0.9,
+                            child: dropDown(
+                              _intensity,
+                              _selectedItemIntensity,
+                              (String? newValue) {
+                                setState(
+                                  () {
+                                    _selectedItemIntensity = newValue!;
+                                  },
+                                );
+                              },
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        border: Border.all(
-                          color: Colors.white,
-                          width: 2.0,
-                        ),
-                        borderRadius: BorderRadius.circular(10),
+                    Spacer(),
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width * .53,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "  Type:",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              border: Border.all(
+                                color: Colors.white,
+                                width: 2.0,
+                              ),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            height: 40,
+                            width: MediaQuery.of(context).size.width * 0.9,
+                            child: dropDown(
+                              _type,
+                              _selectedItemType,
+                              (String? newValue) {
+                                setState(
+                                  () {
+                                    _selectedItemType = newValue!;
+                                  },
+                                );
+                              },
+                            ),
+                          ),
+                        ],
                       ),
-                      height: 40,
-                      width: MediaQuery.of(context).size.width * 0.9,
-                      child: dropDown(_intensity, _selectedItemPart,
-                          (String? newValue) {
-                        setState(() {
-                          _selectedItemPart = newValue!;
-                        });
-                      }),
                     ),
                   ],
                 ),
@@ -296,10 +453,12 @@ class _CreateWorkoutState extends ConsumerState<CreateWorkout> {
             child: ElevatedButton(
               onPressed: () {
                 createExercise();
+                validateInput(context);
+
                 widget.isEdit == false ? createWorkout() : editWorkout();
               },
               style: ElevatedButton.styleFrom(
-                fixedSize: Size(300, 5),
+                fixedSize: const Size(300, 5),
                 foregroundColor: Colors.white,
                 backgroundColor: tertiaryColor,
               ),
@@ -315,7 +474,7 @@ class _CreateWorkoutState extends ConsumerState<CreateWorkout> {
                 createExercise();
               },
               style: ElevatedButton.styleFrom(
-                fixedSize: Size(300, 5),
+                fixedSize: const Size(300, 5),
                 foregroundColor: Colors.white,
                 backgroundColor: tertiaryColor,
               ),
@@ -329,9 +488,8 @@ class _CreateWorkoutState extends ConsumerState<CreateWorkout> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  VideoThumbnailScreen(
+                  UploadImage(
                     isEdit: widget.isEdit,
-                    imageUrl: widget.imageUrl,
                   ),
                 ],
               ),
@@ -342,21 +500,3 @@ class _CreateWorkoutState extends ConsumerState<CreateWorkout> {
     );
   }
 }
-
-// FutureBuilder<List<Exercise>>(
-//           future: _exercisesFuture,
-//           builder: (context, snapshot) {
-//             if (snapshot.connectionState == ConnectionState.waiting) {
-//               return Center(child: CircularProgressIndicator());
-//             } else if (snapshot.hasError) {
-//               return Center(child: Text('Error: ${snapshot.error}'));
-//             } else if (snapshot.hasData) {
-//               List<Exercise> exercises = snapshot.data!;
-//               return
-
-//             } else {
-//               return Center(child: Text('No data available'));
-//             }
-//           },
-//         ),
-

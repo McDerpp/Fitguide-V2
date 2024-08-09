@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/models/exercise.dart';
 import 'package:frontend/screens/exercise/exercises_library.dart';
+import 'package:frontend/screens/inferencing/inferencing_end.dart';
 
 import 'package:frontend/screens/workout/workouts_library.dart';
 import 'package:frontend/provider/main_settings.dart';
@@ -16,7 +17,6 @@ class LowerHome extends StatefulWidget {
 
 class _LowerHomeState extends State<LowerHome> {
   late Future<List<Exercise>> _exercisesFuture;
-
 
   void workout() {
     Navigator.push(
@@ -35,10 +35,18 @@ class _LowerHomeState extends State<LowerHome> {
   }
 
   void mightLike() {
+    // Navigator.push(
+    //   context,
+    //   MaterialPageRoute(
+    //     builder: (context) => const WorkoutLibrary(),
+    //   ),
+    // );
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const WorkoutLibrary(),
+        builder: (context) => const inferencingEnd(
+          exercise: [],
+        ),
       ),
     );
   }
@@ -57,7 +65,6 @@ class _LowerHomeState extends State<LowerHome> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        
         Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [

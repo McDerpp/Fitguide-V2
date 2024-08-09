@@ -65,8 +65,48 @@ final StateProvider<List<bool>> ignoreCoordinatesList = StateProvider((ref) => [
 final StateProvider<List<int>> ignoreCoordinatesBaseProvider =
     StateProvider((ref) => [8, 6, 4, 0, 1, 3, 7]);
 
+// final StateProvider<List<int>> ignoreCoordinatesProvider =
+//     StateProvider((ref) => [8, 6, 4, 0, 1, 3, 7]);
 final StateProvider<List<int>> ignoreCoordinatesProvider =
-    StateProvider((ref) => [8, 6, 4, 0, 1, 3, 7]);
+    StateProvider((ref) => [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          12,
+          11,
+          24,
+          23,
+          11,
+          13,
+          21,
+          17,
+          19,
+          15,
+          12,
+          14,
+          16,
+          18,
+          20,
+          22,
+          23,
+          25,
+          27,
+          29,
+          31,
+          24,
+          26,
+          28,
+          32,
+          30
+        ]);
 
 final StateProvider<String> vidPath = StateProvider((ref) => "");
 final StateProvider<String> imagePath = StateProvider((ref) => "");

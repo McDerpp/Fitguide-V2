@@ -14,7 +14,7 @@ void showCustomDialog(
 }) {
   double screenWidth = MediaQuery.of(context).size.width;
   double screenHeight = MediaQuery.of(context).size.height;
-  Color transparentColor = Colors.white.withOpacity(alphaValue / 255.0);
+  Color transparentColor = Colors.white;
 
   void cancelfunc() {
     Navigator.pop(context);

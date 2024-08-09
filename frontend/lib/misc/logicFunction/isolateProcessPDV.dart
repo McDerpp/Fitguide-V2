@@ -99,6 +99,10 @@ Map<String, dynamic> coordinatesRelativeBoxIsolate(
   double maxCoordinatesX = rawCoordiantes.first.x;
   double maxCoordinatesY = rawCoordiantes.first.y;
 
+  // print("minCoordinatesX _first--->$minCoordinatesX");
+  // print("minCoordinatesY _first--->$minCoordinatesY");
+  // print("maxCoordinatesX _first--->$maxCoordinatesX");
+  // print("maxCoordinatesY _first--->$maxCoordinatesY");
   var valueXRange;
   var valueYRange;
 
@@ -111,39 +115,48 @@ Map<String, dynamic> coordinatesRelativeBoxIsolate(
   bool allCoordinatesPresent = true;
 
   for (var pose in rawCoordiantes) {
-    if (coordinatesIgnore.contains(ctr) == false) {
+    // if (!coordinatesIgnore.contains(ctr)) {
+    if (coordinatesIgnore.contains(ctr)) {
+      // print("getting max and min");
       if (pose.likelihood <= .75) {
         checkLikelihoodCtr++;
       }
 
-      if (minCoordinatesX >= pose.x) {
+      if (minCoordinatesX > pose.x) {
         minCoordinatesX = pose.x;
       }
-      if (minCoordinatesY >= pose.y) {
+      if (minCoordinatesY > pose.y) {
         minCoordinatesY = pose.y;
       }
 
-      if (maxCoordinatesX <= pose.x) {
+      if (maxCoordinatesX < pose.x) {
         maxCoordinatesX = pose.x;
       }
-      if (maxCoordinatesY <= pose.y) {
+      if (maxCoordinatesY < pose.y) {
         maxCoordinatesY = pose.y;
       }
     }
     ctr++;
   }
+  // print("minCoordinatesX_final--->$minCoordinatesX");
+  // print("minCoordinatesY_final--->$minCoordinatesY");
+  // print("maxCoordinatesX_final--->$maxCoordinatesX");
+  // print("maxCoordinatesY_final--->$maxCoordinatesY");
 
   for (var pose in rawCoordiantes) {
-    if (coordinatesIgnore.contains(ctr2) == false) {
+    // if (coordinatesIgnore.contains(ctr2) == false) {
+    // lazy fix...should fix properly later on
+    if (coordinatesIgnore.contains(ctr2) == true) {
       valueXRange =
           (pose.x - minCoordinatesX) / (maxCoordinatesX - minCoordinatesX);
       valueYRange =
           (pose.y - minCoordinatesY) / (maxCoordinatesY - minCoordinatesY);
+
     } else {
+      // print("coordinates ignoring");
       valueXRange = 0.0;
       valueYRange = 0.0;
     }
-    // flattening it ahead of time for later processes later...
 
     translatedCoordinates.add(
         double.parse(valueXRange.toStringAsFixed(dataNormalizedDecimalPlace)));
@@ -179,7 +192,6 @@ bool checkMovement(Map<String, dynamic> input) {
   var currentCoordinates = input['currentCoordinates'];
   var token = input['token'];
 
-  bool noMovement = false;
   double changeRange = 0.045;
   int noMovementCtr = 0;
 

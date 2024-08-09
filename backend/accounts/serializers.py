@@ -11,7 +11,14 @@ class AccountSerializer(serializers.ModelSerializer):
         user = Account.objects.create_user(**validated_data)
         return user
 
+class AccountInformationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Account
+        fields = ('username','id')
+
 # serializers.py
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField(write_only=True)
+
+

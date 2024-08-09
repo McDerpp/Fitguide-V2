@@ -1,48 +1,36 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:frontend/account.dart';
+import 'package:frontend/models/dataset.dart';
+import 'package:frontend/models/exercise.dart';
+import 'package:frontend/models/model.dart';
 import 'package:frontend/screens/exercise/exercise.dart';
 import 'package:frontend/provider/main_settings.dart';
+import 'package:frontend/services/history.dart';
 
-class ExerciseCard extends StatefulWidget {
-  final String id;
-  final String nameExercise;
-  final int repitions;
-  final int sets;
-  final String parts;
-  final String author;
-  final String image;
-  final String video;
+class ExerciseCard extends ConsumerStatefulWidget {
+  final Exercise exercise;
+
   final bool isFavorite;
 
   const ExerciseCard({
     super.key,
-    required this.id,
-    required this.nameExercise,
-    required this.repitions,
-    required this.sets,
-    required this.parts,
-    required this.author,
+    required this.exercise,
     this.isFavorite = false,
-    required this.image,
-    required this.video,
   });
 
   @override
-  State<ExerciseCard> createState() => _ExerciseCardState();
+  ConsumerState<ExerciseCard> createState() => _ExerciseCardState();
 }
 
-class _ExerciseCardState extends State<ExerciseCard> {
+class _ExerciseCardState extends ConsumerState<ExerciseCard> {
   void ExerciseLibrary() {
     Navigator.push(
       context,
       MaterialPageRoute(
           builder: (context) => ExerciseScreen(
-                id: widget.id,
-                nameExercise: widget.nameExercise,
-                repitions: widget.repitions,
-                sets: widget.sets,
-                parts: widget.parts,
-                author: widget.author,
-                video: widget.video,
+                exercise: widget.exercise,
               )),
     );
   }
@@ -61,23 +49,142 @@ class _ExerciseCardState extends State<ExerciseCard> {
             children: [
               Container(
                 width: MediaQuery.of(context).size.width * 0.93,
-                height: MediaQuery.of(context).size.height * 0.15,
+                height: MediaQuery.of(context).size.height * 0.12,
                 decoration: BoxDecoration(
                   color: secondaryColor,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(
+                          left: 10.0,
+                          top: 10.0,
+                          right: 5.0,
+                          bottom: 10.0,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  width: 120,
+                                  height: 28,
+                                  child: Text(
+                                    "${widget.exercise.name}",
+                                    style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w500,
+                                        height: 0.8),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Text(
+                              '${widget.exercise.parts}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                            Spacer(),
+                            Row(
+                              children: [
+                                SizedBox(
+                                  width: 50,
+                                  child: Row(
+                                    children: [
+                                      const Text(
+                                        "Sets: ",
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w400,
+                                        ),
+                                      ),
+                                      Text(
+                                        widget.exercise.numSet.toString(),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w300,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                SizedBox(
+                                  width: 50,
+                                  child: Row(
+                                    children: [
+                                      const Text(
+                                        "Reps: ",
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w400,
+                                        ),
+                                      ),
+                                      Text(
+                                        widget.exercise.numSet.toString(),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w300,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const Spacer(),
+                            SizedBox(
+                              width: 110,
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 50,
+                                    child: Text(
+                                      "ID ${widget.exercise.id}",
+                                      style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 7,
+                                          fontWeight: FontWeight.w300,
+                                          height: 1),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  Container(
+                                    width: 50,
+                                    child: Text(
+                                      "By: ${widget.exercise.madeBy}",
+                                      style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 7,
+                                          fontWeight: FontWeight.w300,
+                                          height: 1),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                     Stack(
                       children: [
-                        Padding(
-                          padding: const EdgeInsets.all(5),
-                          child: Icon(
-                            Icons.favorite_border,
-                            color: secondaryColor,
-                            size: 30.0,
-                          ),
-                        ),
                         ClipRRect(
                           borderRadius: BorderRadius.circular(10),
                           child: ShaderMask(
@@ -86,105 +193,75 @@ class _ExerciseCardState extends State<ExerciseCard> {
                                 begin: Alignment.centerRight,
                                 end: Alignment.centerLeft,
                                 colors: [Colors.transparent, Colors.red],
-                              ).createShader(
-                                  Rect.fromLTRB(0, 0, rect.width, rect.height));
+                              ).createShader(Rect.fromLTRB(
+                                  rect.width * 0.50, rect.height * 0.50, 0, 0));
                             },
                             blendMode: BlendMode.dstIn,
                             child: Image.network(
-                              widget.image,
+                              widget.exercise.imageUrl,
                               fit: BoxFit.cover,
                               width: MediaQuery.of(context).size.width * 0.50,
                               height: MediaQuery.of(context).size.height * 0.15,
                             ),
-
-                            // Image.asset(
-                            //   'assets/images/placeholder_image.jpg',
-                            //   fit: BoxFit.cover,
-                            //   width: MediaQuery.of(context).size.width * 0.50,
-                            //   height: MediaQuery.of(context).size.height * 0.15,
-                            // ),
                           ),
                         ),
-                        Padding(
-                          padding: const EdgeInsets.all(5),
-                          child: Icon(
-                            Icons.favorite_border,
-                            color: secondaryColor,
-                            size: 25.0,
+                        Positioned(
+                          top: 0,
+                          right: 0,
+                          child: GestureDetector(
+                            child: Padding(
+                              padding: const EdgeInsets.all(5),
+                              child: Icon(
+                                widget.exercise.isFavorite == false
+                                    ? Icons.favorite_border
+                                    : Icons.favorite,
+                                color: secondaryColor,
+                                size: 25.0,
+                              ),
+                            ),
+                            onTap: () {
+                              widget.exercise.isFavorite == false
+                                  ? HistoryApiService.addExerciseFavorite(
+                                      ref: ref,
+                                      accountID: int.parse(setup.id),
+                                      exerciseID: widget.exercise.id)
+                                  : HistoryApiService.deleteExerciseFavorite(
+                                      ref: ref,
+                                      accountID: int.parse(setup.id),
+                                      exerciseID: widget.exercise.id);
+                            },
                           ),
                         ),
+                        Positioned(
+                          top: 0,
+                          right: 0,
+                          child: Padding(
+                            padding: EdgeInsets.all(5),
+                            child: GestureDetector(
+                              child: Icon(
+                                widget.exercise.isFavorite == false
+                                    ? Icons.favorite_border
+                                    : Icons.favorite,
+                                color: secondaryColor,
+                                size: 25.0,
+                              ),
+                              onTap: () {
+                                widget.exercise.isFavorite == false
+                                    ? HistoryApiService.addExerciseFavorite(
+                                        ref: ref,
+                                        accountID: int.parse(setup.id),
+                                        exerciseID: widget.exercise.id)
+                                    : HistoryApiService.deleteExerciseFavorite(
+                                        ref: ref,
+                                        accountID: int.parse(setup.id),
+                                        exerciseID: widget.exercise.id);
+                                setState(() {});
+                              },
+                            ),
+                          ),
+                        )
                       ],
                     ),
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.only(
-                          left: 2.0,
-                          top: 5.0,
-                          right: 5.0,
-                          bottom: 5.0,
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Container(
-                              width: 120,
-                              child: Text(
-                                widget.nameExercise,
-                                style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w600,
-                                    height: 0.8),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                textAlign: TextAlign.end,
-                              ),
-                            ),
-                            const SizedBox(
-                              height: 10,
-                            ),
-                            Text(
-                              widget.parts,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w300,
-                              ),
-                            ),
-                            Text(
-                              "${widget.sets} Sets",
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w300,
-                              ),
-                            ),
-                            Text(
-                              "${widget.repitions} Repitions",
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w300,
-                              ),
-                            ),
-                            const Spacer(),
-                            Container(
-                              width: 110,
-                              child: Text(
-                                "ID ${widget.id}\nBy: ${widget.author}sdfavsdfvsefasvefaes",
-                                style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 7,
-                                    fontWeight: FontWeight.w300,
-                                    height: 1),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    )
                   ],
                 ),
               )
@@ -195,3 +272,5 @@ class _ExerciseCardState extends State<ExerciseCard> {
     );
   }
 }
+
+// exerciseFetchProvider

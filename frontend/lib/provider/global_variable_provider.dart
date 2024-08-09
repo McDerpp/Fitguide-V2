@@ -63,8 +63,8 @@ final StateProvider<List<bool>> ignoreCoordinatesList = StateProvider((ref) => [
 final StateProvider<List<int>> ignoreCoordinatesBaseProvider =
     StateProvider((ref) => [8, 6, 4, 0, 1, 3, 7]);
 
-final StateProvider<List<int>> ignoreCoordinatesProvider =
-    StateProvider((ref) => [8, 6, 4, 0, 1, 3, 7]);
+// final StateProvider<List<int>> ignoreCoordinatesProvider =
+//     StateProvider((ref) => [8, 6, 4, 0, 1, 3, 7]);
 
 final StateProvider<String> vidPath = StateProvider((ref) => "");
 final StateProvider<String> imagePath = StateProvider((ref) => "");
@@ -86,7 +86,7 @@ final StateProvider<bool> showPreviewProvider = StateProvider((ref) => true);
 
 final StateProvider<File> videoPreviewProvider =
     StateProvider((ref) => File(""));
-final StateProvider<File> imageProvider = StateProvider((ref) => File(""));
+// final StateProvider<File> imageProvider = StateProvider((ref) => File(""));
 final StateProvider<String> difficultyProvider = StateProvider((ref) => "");
 final StateProvider<String> exerciseIDProvider = StateProvider((ref) => "");
 final StateProvider<String> partsProvider = StateProvider((ref) => "");

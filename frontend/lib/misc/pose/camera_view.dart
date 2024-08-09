@@ -108,36 +108,36 @@ class _CameraViewState extends ConsumerState<CameraView> {
         .showSnackBar(SnackBar(content: Text(message)));
   }
 
-  Future<void> _startVideoPlayer() async {
-    if (videoFile == null) {
-      return;
-    }
+  // Future<void> _startVideoPlayer() async {
+  //   if (videoFile == null) {
+  //     return;
+  //   }
 
-    final VideoPlayerController vController = kIsWeb
-        ? VideoPlayerController.networkUrl(Uri.parse(videoFile!.path))
-        : VideoPlayerController.file(File(videoFile!.path));
+  //   final VideoPlayerController vController = kIsWeb
+  //       ? VideoPlayerController.networkUrl(Uri.parse(videoFile!.path))
+  //       : VideoPlayerController.file(File(videoFile!.path));
 
-    videoPlayerListener = () {
-      if (videoController != null) {
-        // Refreshing the state to update video player with the correct ratio.
-        if (mounted) {
-          setState(() {});
-        }
-        videoController!.removeListener(videoPlayerListener!);
-      }
-    };
-    vController.addListener(videoPlayerListener!);
-    await vController.setLooping(true);
-    await vController.initialize();
-    await videoController?.dispose();
-    if (mounted) {
-      setState(() {
-        imageFile = null;
-        videoController = vController;
-      });
-    }
-    await vController.play();
-  }
+  //   videoPlayerListener = () {
+  //     if (videoController != null) {
+  //       // Refreshing the state to update video player with the correct ratio.
+  //       if (mounted) {
+  //         setState(() {});
+  //       }
+  //       videoController!.removeListener(videoPlayerListener!);
+  //     }
+  //   };
+  //   vController.addListener(videoPlayerListener!);
+  //   await vController.setLooping(true);
+  //   await vController.initialize();
+  //   await videoController?.dispose();
+  //   if (mounted) {
+  //     setState(() {
+  //       imageFile = null;
+  //       videoController = vController;
+  //     });
+  //   }
+  //   await vController.play();
+  // }
 
 // ====================================================================================
   void onVideoRecordButtonPressed() {
@@ -192,7 +192,6 @@ class _CameraViewState extends ConsumerState<CameraView> {
       }
       if (file != null) {
         showInSnackBar('Video recorded to ${file.path}');
-        print("video path is -->${file.path} ");
         ref.watch(vidPath.notifier).state = file.path;
 
         videoFile = file;
@@ -214,7 +213,6 @@ class _CameraViewState extends ConsumerState<CameraView> {
 
   @override
   Widget build(BuildContext context) {
-    print("cameraView");
     return _liveFeedBody();
   }
 
@@ -386,7 +384,6 @@ class _CameraViewState extends ConsumerState<CameraView> {
   }
 
   double _calculateAverageLuminance(CameraImage image) {
-    print("calculating luminance");
     final int plane = 0; // Y plane
 
     final Uint8List bytes = image.planes[plane].bytes;
@@ -401,12 +398,10 @@ class _CameraViewState extends ConsumerState<CameraView> {
       }
     }
     results = results / bytes.length;
-    print("resutls---> $results");
     return results;
   }
 
   void _processCameraImage(CameraImage image) {
-    print("process image camera");
     ref.read(luminanceProvider.notifier).state =
         _calculateAverageLuminance(image);
 

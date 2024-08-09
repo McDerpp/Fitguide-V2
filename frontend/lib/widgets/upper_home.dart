@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/provider/main_settings.dart';
-import 'package:frontend/widgets/calendar_min.dart';
+import 'package:frontend/screens/history/calendar_min.dart';
 
 class UpperHome extends StatefulWidget {
   const UpperHome({super.key});

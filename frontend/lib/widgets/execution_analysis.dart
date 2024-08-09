@@ -2,12 +2,14 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:frontend/screens/coreFunctionality/globalVariables.dart';
-import 'package:frontend/screens/coreFunctionality/provider_collection.dart';
 import 'package:frontend/screens/dataCollection/p2_txt_conversion.dart';
 import 'package:frontend/provider/main_settings.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'hc_progressbar.dart';
+
+import 'package:frontend/provider/data_collection_provider.dart';
+
 
 class cwDataAnalysis extends ConsumerStatefulWidget {
   final double widthMultiplier;
@@ -42,17 +44,13 @@ class _cwDataAnalysisState extends ConsumerState<cwDataAnalysis> {
   bool boolLoading2 = false;
   bool review = false;
 
-  List<int> data = [];
+  // List<int> data = [];
 
   @override
   void initState() {
     super.initState();
 
-    for (int i = 0; i < 30; i++) {
-      data.add(Random().nextInt(100) + 1);
-    }
-    // uncomment this after testing
-    // ref.read(numExec.notifier).state = widget.execCount;
+    ref.read(numExec.notifier).state = widget.execCount;
   }
 
   @override
@@ -85,6 +83,7 @@ class _cwDataAnalysisState extends ConsumerState<cwDataAnalysis> {
         ref.watch(incorrectCoordinatesDataProvider).state;
 
     for (List<List<double>> execution in positiveData) {
+      print("positive data");
       totalFramesPositive = totalFramesPositive + execution.length;
 
       if (ref.read(maxFrameState.notifier).state < execution.length) {
@@ -358,6 +357,7 @@ class _cwDataAnalysisState extends ConsumerState<cwDataAnalysis> {
         );
       },
     );
+    setState(() {});
   }
 
   Widget executionResults({
@@ -471,8 +471,8 @@ class _cwDataAnalysisState extends ConsumerState<cwDataAnalysis> {
     );
   }
 
-  Widget processingToTxtScreen() {
-    return Scaffold();
+  void test() {
+    print("coordinatesData--->${ref.watch(coordinatesDataProvider).state}");
   }
 
   @override

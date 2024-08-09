@@ -47,7 +47,6 @@ class _DetectorViewState extends State<DetectorView> {
 
   @override
   Widget build(BuildContext context) {
-    print("detectorView");
     return _mode == DetectorViewMode.liveFeed
         ? CameraView(
             isCollecting: widget.isCollecting,

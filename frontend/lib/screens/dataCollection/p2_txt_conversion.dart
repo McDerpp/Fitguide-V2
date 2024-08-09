@@ -2,8 +2,13 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:frontend/provider/data_collection_provider.dart';
+import 'package:frontend/provider/main_settings.dart';
 import 'package:frontend/screens/coreFunctionality/globalVariables.dart';
-import 'package:frontend/screens/coreFunctionality/provider_collection.dart';
+import 'package:frontend/screens/exercise/create_exercise.dart';
+import 'package:frontend/screens/exercise/exercise_data_management.dart';
+
+// import 'package:frontend/screens/coreFunctionality/provider_collection.dart';
 import 'package:frontend/widgets/custom_button.dart';
 
 import 'package:path_provider/path_provider.dart';
@@ -58,6 +63,17 @@ class _collectionDataP1State extends ConsumerState<collectionDataP1> {
     "AI: 01101011 01100001 01110000 01101111 01111001 01100001 00100000 01110100 01101000 01100101 01110011 01101001 01110011 00100000 01101111 01101001",
   ];
 
+  void navigateDone() {
+    int count = 0;
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => const CreateExercise()),
+      (Route<dynamic> route) {
+        return count++ >= 4;
+      },
+    );
+  }
+
   Future<void> translateCollectedDatatoTxt(
     List<dynamic> dataCollected,
     bool isCorrectDataset,
@@ -109,9 +125,14 @@ class _collectionDataP1State extends ConsumerState<collectionDataP1> {
         await file.writeAsString('END\n', mode: FileMode.append);
       }
     }
-    isCorrectDataset == true
-        ? ref.read(correctDataSetPath.notifier).state = filePath
-        : ref.read(incorrectDataSetPath.notifier).state = filePath;
+
+    if (isCorrectDataset == true) {
+      ref.read(correctDataSetPath.notifier).state = filePath;
+      ref.read(positiveDatasetProvider.notifier).state = File(filePath);
+    } else {
+      ref.read(incorrectDataSetPath.notifier).state = filePath;
+      ref.read(negativeDatasetProvider.notifier).state = File(filePath);
+    }
   }
 
   @override
@@ -123,13 +144,11 @@ class _collectionDataP1State extends ConsumerState<collectionDataP1> {
 
   @override
   void dispose() {
-    print('Process stopped');
     super.dispose();
   }
 
   Future<void> testLoading() async {
     for (int ctr = 0; ctr < 100; ctr++) {
-      print("this is progress --->  $progress");
       setState(() {
         progress = ctr;
       });
@@ -207,18 +226,7 @@ class _collectionDataP1State extends ConsumerState<collectionDataP1> {
                             textSizeModifierIndividual:
                                 textSizeModif['smallText2']!,
                             func: () {
-                              // Navigator.push(
-                              //   context,
-                              //   MaterialPageRoute(
-                              //     builder: (context) =>
-                              //         widget.isRetraining == true
-                              //             ? collectionDataP4(
-                              //                 isRetraining: true,
-                              //                 isNewRetrain: widget.isNewRetrain,
-                              //               )
-                              //             : const collectionDataP2(),
-                              //   ),
-                              // );
+                              navigateDone();
                             },
                           ),
                         ],

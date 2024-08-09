@@ -5,6 +5,8 @@ class InputField extends StatelessWidget {
   TextEditingController textController;
   bool obscureText;
   bool isParagraph;
+  bool isNumber;
+  bool isEnabled;
 
   InputField({
     super.key,
@@ -12,6 +14,8 @@ class InputField extends StatelessWidget {
     required this.textController,
     this.obscureText = false,
     this.isParagraph = false,
+    this.isNumber = false,
+    this.isEnabled = true,
   });
 
   @override
@@ -35,10 +39,11 @@ class InputField extends StatelessWidget {
             ),
             borderRadius: BorderRadius.circular(12),
           ),
-          height: isParagraph ? 150 : 45,
+          height: isParagraph ? 150 : 38,
           width: MediaQuery.of(context).size.width * 0.9,
           child: !isParagraph
               ? TextField(
+                  enabled: isEnabled,
                   obscureText: obscureText,
                   controller: textController,
                   decoration: const InputDecoration(
@@ -48,6 +53,7 @@ class InputField extends StatelessWidget {
                   ),
                 )
               : TextField(
+                  enabled: isEnabled,
                   obscureText: obscureText,
                   controller: textController,
                   keyboardType: TextInputType.multiline,
