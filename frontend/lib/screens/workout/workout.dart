@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/account.dart';
 import 'package:frontend/models/exercise.dart';
@@ -7,14 +6,14 @@ import 'package:frontend/models/workout.dart';
 import 'package:frontend/provider/global_variable_provider.dart';
 import 'package:frontend/provider/main_settings.dart';
 import 'package:frontend/provider/provider.dart';
-import 'package:frontend/provider/workout.dart';
 import 'package:frontend/screens/inferencing/inferencing_seamless.dart';
 import 'package:frontend/screens/workout/create_workout_details.dart';
 import 'package:frontend/screens/workout/workout_data_management.dart';
-import 'package:frontend/services/exercise.dart';
+import 'package:frontend/services/history.dart';
 import 'package:frontend/services/workout.dart';
 import 'package:frontend/screens/exercise/exercise_card.dart';
 import 'package:frontend/widgets/header.dart';
+import 'package:frontend/widgets/spaceLine.dart';
 
 class workoutPage extends ConsumerStatefulWidget {
   final int id;
@@ -98,10 +97,252 @@ class _workoutPageState extends ConsumerState<workoutPage> {
     if (workout != null) {
       setState(() {
         workoutHere = workout;
+        isFavorite = workoutHere.isFavorite;
       });
     } else {
       print('Workout not found');
     }
+  }
+
+  Widget details() {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.22,
+      width: MediaQuery.of(context).size.width,
+      // decoration: BoxDecoration(
+      //   color: tertiaryColor,
+      //   borderRadius: BorderRadius.circular(10),
+      // ),
+      child: Padding(
+        padding: const EdgeInsets.only(
+          left: 15,
+          right: 5,
+        ),
+        // child: Scrollbar(
+        //   trackVisibility: true,
+        //   thumbVisibility: true,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: <Widget>[
+              Container(
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    width: MediaQuery.of(context).size.width *
+                                        0.12,
+                                    child: Text(
+                                      "#${workoutHere.id.toString()}",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 8,
+                                        fontWeight: FontWeight.w100,
+                                      ),
+                                    ),
+                                  ),
+                                  Container(
+                                    width: MediaQuery.of(context).size.width *
+                                        0.50,
+                                    child: Text(
+                                      "Created by:${workoutHere.madeBy.toString()}",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 8,
+                                        fontWeight: FontWeight.w100,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(
+                                height: 15,
+                              ),
+                              const Text(
+                                // widget.nameExercise,
+                                "Name of Exercise",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w100,
+                                ),
+                              ),
+                              Text(
+                                // widget.nameExercise,
+                                workoutHere.name,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const Spacer(),
+                          workoutHere.account.toString() == setup.id
+                              ? Padding(
+                                  padding: const EdgeInsets.all(5),
+                                  child: GestureDetector(
+                                    child: const Icon(
+                                      Icons.edit,
+                                      color: Colors.white,
+                                      size: 30.0,
+                                    ),
+                                    onTap: () {
+                                      beginEdit();
+                                    },
+                                  ),
+                                )
+                              : const SizedBox(),
+                          Padding(
+                            padding: const EdgeInsets.all(5),
+                            child: GestureDetector(
+                              child: Icon(
+                                isFavorite == false
+                                    ? Icons.favorite_border
+                                    : Icons.favorite,
+                                color: Colors.white,
+                                size: 30.0,
+                              ),
+                              onTap: () {
+                                workoutHere.isFavorite == false
+                                    ? HistoryApiService.addWorkoutFavorite(
+                                        ref: ref,
+                                        accountID: int.parse(setup.id),
+                                        workoutID: workoutHere.id)
+                                    : HistoryApiService.deleteWorkoutFavorite(
+                                        ref: ref,
+                                        accountID: int.parse(setup.id),
+                                        workoutID: workoutHere.id);
+                                setState(() {
+                                  isFavorite = !isFavorite;
+                                });
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(
+                        height: 8,
+                      ),
+                      Row(
+                        children: [
+                          Container(
+                            width: 90,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  // workoutHere.nameExercise,
+                                  "Difficulty",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w100,
+                                  ),
+                                ),
+                                Text(
+                                  // workoutHere.nameExercise,
+                                  workoutHere.difficulty,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(
+                            width: 8,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(
+                        height: 8,
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            // widget.nameExercise,
+                            "Description",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w100,
+                            ),
+                          ),
+                          Container(
+                            child: Text(
+                              workoutHere.description,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w400,
+                              ),
+                              maxLines: 100,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.justify,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              // More widgets
+            ],
+          ),
+        ),
+        // ),
+      ),
+    );
+  }
+
+  Widget exerciseCards() {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.51,
+      child: FutureBuilder<List<Exercise>>(
+        future: _exercisesFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          } else if (snapshot.hasData) {
+            List<Exercise> exercises = snapshot.data!;
+            return Container(
+              height: 500,
+              child: SingleChildScrollView(
+                child: Column(
+                  children: exercises.map((exercise) {
+                    return Container(
+                      width: MediaQuery.of(context).size.width * 0.90,
+                      margin: const EdgeInsets.symmetric(horizontal: 5.0),
+                      child: ExerciseCard(
+                        exercise: exercise,
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            );
+          } else {
+            return const Center(child: Text('No data available'));
+          }
+        },
+      ),
+    );
   }
 
   @override
@@ -109,293 +350,47 @@ class _workoutPageState extends ConsumerState<workoutPage> {
     ref.watch(showPreviewProvider.notifier).state = true;
 
     return Scaffold(
-      body: Container(
-        width: MediaQuery.of(context).size.width,
-        height: MediaQuery.of(context).size.height,
-        child: Stack(
-          children: [
-            Positioned(
-              bottom: 0,
-              left: 0,
-              child: Container(
-                width: MediaQuery.of(context).size.width,
-                height: MediaQuery.of(context).size.height * 3,
-                foregroundDecoration: const BoxDecoration(),
-                child: Container(
-                  color: mainColor,
-                ),
-              ),
+      body: Stack(
+        children: [
+          Container(
+            width: MediaQuery.of(context).size.width,
+            height: MediaQuery.of(context).size.height,
+            foregroundDecoration: const BoxDecoration(),
+            child: Container(
+              color: mainColor,
             ),
-            FutureBuilder<List<Exercise>>(
-              future: _exercisesFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                } else if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                } else if (snapshot.hasData) {
-                  List<Exercise> exercises = snapshot.data!;
-                  return Positioned(
-                    top: 270,
-                    right: 5,
-                    left: 5,
-                    child: Container(
-                      height: 500,
-                      child: SingleChildScrollView(
-                        child: Column(
-                          children: exercises.map(
-                            (exercise) {
-                              exerciseList.add(exercise);
-                              return Container(
-                                width: MediaQuery.of(context).size.width * 0.90,
-                                margin:
-                                    const EdgeInsets.symmetric(horizontal: 5.0),
-                                child: ExerciseCard(
-                                  exercise: exercise,
-                                ),
-                              );
-                            },
-                          ).toList(),
-                        ),
+          ),
+          Header(),
+          Container(
+            width: MediaQuery.of(context).size.width,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                SizedBox(height: MediaQuery.of(context).size.height * 0.14),
+                details(),
+                spaceLine(context),
+                exerciseCards(),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => InferencingSeamless(
+                            workoutId: widget.id, exerciseList),
                       ),
-                    ),
-                  );
-                } else {
-                  return const Center(child: Text('No data available'));
-                }
-              },
-            ),
-            Container(
-              height: MediaQuery.of(context).size.height * 0.35,
-              width: MediaQuery.of(context).size.width,
-              decoration: BoxDecoration(
-                color: tertiaryColor,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.only(
-                  top: 80,
-                  left: 15,
-                  right: 5,
-                  bottom: 15,
-                ),
-                // child: Scrollbar(
-                //   trackVisibility: true,
-                //   thumbVisibility: true,
-                child: SingleChildScrollView(
-                  child: Column(
-                    children: <Widget>[
-                      Container(
-                        child: Padding(
-                          padding: const EdgeInsets.only(right: 10),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      const Text(
-                                        // widget.nameExercise,
-                                        "Name of Exercise",
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 8,
-                                          fontWeight: FontWeight.w100,
-                                        ),
-                                      ),
-                                      Text(
-                                        // widget.nameExercise,
-                                        workoutHere.name,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.w400,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const Spacer(),
-                                  workoutHere.account.toString() == setup.id
-                                      ? Padding(
-                                          padding: const EdgeInsets.all(5),
-                                          child: GestureDetector(
-                                            child: const Icon(
-                                              Icons.edit,
-                                              color: Colors.white,
-                                              size: 30.0,
-                                            ),
-                                            onTap: () {
-                                              beginEdit();
-                                            },
-                                          ),
-                                        )
-                                      : const SizedBox(),
-                                  Padding(
-                                    padding: const EdgeInsets.all(5),
-                                    child: GestureDetector(
-                                      child: Icon(
-                                        isFavorite == false
-                                            ? Icons.favorite_border
-                                            : Icons.favorite,
-                                        color: Colors.white,
-                                        size: 30.0,
-                                      ),
-                                      onTap: () {
-                                        setState(
-                                          () {
-                                            isFavorite = !isFavorite;
-                                          },
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(
-                                height: 8,
-                              ),
-                              Row(
-                                children: [
-                                  Container(
-                                    width: 90,
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        const Text(
-                                          // workoutHere.nameExercise,
-                                          "Difficulty",
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 8,
-                                            fontWeight: FontWeight.w100,
-                                          ),
-                                        ),
-                                        Text(
-                                          // workoutHere.nameExercise,
-                                          workoutHere.difficulty,
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 17,
-                                            fontWeight: FontWeight.w400,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(
-                                    width: 8,
-                                  ),
-                                  Container(
-                                    width: 90,
-                                    child: const Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          // workoutHere.nameExercise,
-                                          "Duration",
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 8,
-                                            fontWeight: FontWeight.w100,
-                                          ),
-                                        ),
-                                        // Text(
-                                        //   // widget.nameExercise,
-                                        //   duration + " Mins",
-                                        //   style: const TextStyle(
-                                        //     color: Colors.white,
-                                        //     fontSize: 17,
-                                        //     fontWeight: FontWeight.w400,
-                                        //   ),
-                                        // ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(
-                                height: 8,
-                              ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    // widget.nameExercise,
-                                    "Duration",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 8,
-                                      fontWeight: FontWeight.w100,
-                                    ),
-                                  ),
-                                  Container(
-                                    child: Text(
-                                      workoutHere.description,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w400,
-                                      ),
-                                      maxLines: 100,
-                                      overflow: TextOverflow.ellipsis,
-                                      textAlign: TextAlign.justify,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      // More widgets
-                    ],
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    fixedSize: const Size(300, 5),
+                    foregroundColor: Colors.white,
+                    backgroundColor: tertiaryColor,
                   ),
+                  child: const Text('Perform the workout'),
                 ),
-                // ),
-              ),
+              ],
             ),
-            const Header(),
-            Positioned(
-              top: 270,
-              child: Container(
-                height: 500,
-                child: const SingleChildScrollView(
-                  child: Column(
-                    children: <Widget>[
-                      // More widgets
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              left: 20,
-              right: 20,
-              bottom: 15,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => InferencingSeamless(exerciseList),
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  fixedSize: const Size(300, 5),
-                  foregroundColor: Colors.white,
-                  backgroundColor: tertiaryColor,
-                ),
-                child: const Text('Peform the workout'),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

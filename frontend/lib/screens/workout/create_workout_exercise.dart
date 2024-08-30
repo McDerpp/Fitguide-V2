@@ -4,15 +4,18 @@ import 'package:frontend/models/exercise.dart';
 import 'package:frontend/provider/provider.dart';
 import 'package:frontend/screens/workout/workout_data_management.dart';
 import 'package:frontend/screens/workout/create_workout_details.dart';
-import 'package:frontend/screens/dataCollection/p1_base_collection.dart';
 import 'package:frontend/provider/main_settings.dart';
-import 'package:frontend/services/exercise.dart';
 import 'package:frontend/screens/exercise/exercise_card.dart';
-import 'package:frontend/services/workout.dart';
 import 'package:frontend/widgets/header.dart';
 import 'package:frontend/widgets/name_indicator.dart';
 import 'package:frontend/widgets/navigation_drawer.dart';
-import 'package:smooth_page_indicator/smooth_page_indicator.dart';
+
+class FilterCategory {
+  final String title;
+  final Map<String, bool> filters;
+
+  FilterCategory({required this.title, required this.filters});
+}
 
 class PickExercise extends ConsumerStatefulWidget {
   final bool isEdit;
@@ -26,22 +29,60 @@ class PickExercise extends ConsumerStatefulWidget {
 }
 
 class _PickExerciseState extends ConsumerState<PickExercise> {
-  List<String> _bodyPart = ['All', 'Two', 'Three', 'Four'];
-  List<String> intensity = ['All', 'Custom', 'Premade', 'Four'];
-  List<String> _favorite = ['All', 'Favorite', 'Non-Favorite'];
-
-  late String _selectedItemPart = _bodyPart[0];
-  late String selectedIntensity = intensity[0];
-  late String _selectedItemFavorite = _favorite[0];
+  int upperState = 0;
+  int filterState = 0;
 
   late List<int> pickedExercise;
-
-  // late Future<List<Exercise>> _exercisesFuture;
   List<Exercise> _exercisesFuture = [];
-
-  late Future<List<Exercise>> _currentExercisesFuture;
-
   final PageController _pageController = PageController();
+
+  final List<FilterCategory> filterCategories = [
+    FilterCategory(
+      title: 'Parts',
+      filters: {
+        "Neck": false,
+        "Traps": false,
+        "Shoulder": false,
+        "Chest": false,
+        "Biceps": false,
+        "Forearms": false,
+        "Abs": false,
+        "Quadriceps": false,
+        "Calves": false,
+        "Upper Back": false,
+        "Triceps": false,
+        "Lower Back": false,
+        "Glutes": false,
+        "Hamstrings": false,
+        "Others": false,
+      },
+    ),
+    FilterCategory(
+      title: 'Intensity',
+      filters: {
+        "Easy": false,
+        "Normal": false,
+        "Hard": false,
+        "Advance": false,
+      },
+    ),
+    FilterCategory(
+      title: 'Order',
+      filters: {
+        "A->Z": false,
+        "Z->A": false,
+        "Newest": false,
+        "Oldest": false,
+      },
+    ),
+    FilterCategory(
+      title: 'Others',
+      filters: {
+        "Favorite": false,
+        "Non-Favorite": false,
+      },
+    ),
+  ];
 
   @override
   void initState() {
@@ -110,6 +151,268 @@ class _PickExerciseState extends ConsumerState<PickExercise> {
     );
   }
 
+  Widget filter() {
+    return Container(
+      decoration: BoxDecoration(
+        color: miscColor,
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(10),
+          bottomRight: Radius.circular(10),
+        ),
+      ),
+      width: MediaQuery.of(context).size.width * .95,
+      height: MediaQuery.of(context).size.height * 0.25,
+      child: Padding(
+        padding: EdgeInsets.all(10),
+        child: ListView.builder(
+          itemCount: filterCategories.length,
+          itemBuilder: (context, index) {
+            final category = filterCategories[index];
+            return Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    category.title,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Wrap(
+                    spacing: 2.0,
+                    runSpacing: 1.0,
+                    children: category.filters.keys.map(
+                      (key) {
+                        return FilterChip(
+                          showCheckmark: false,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                            side: BorderSide(
+                              color: tertiaryColor!,
+                              width: 1.0,
+                            ),
+                          ),
+                          backgroundColor: category.filters[key]!
+                              ? tertiaryColor
+                              : mainColor,
+                          selectedColor: tertiaryColor,
+                          label: Text(
+                            key,
+                            style: TextStyle(
+                              color: category.filters[key]!
+                                  ? Colors.white
+                                  : Colors.white,
+                              fontSize: 12,
+                            ),
+                          ),
+                          selected: category.filters[key]!,
+                          onSelected: (bool selected) {
+                            setState(() {
+                              category.filters[key] = selected;
+                            });
+                          },
+                        );
+                      },
+                    ).toList(),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget upperSearchBase() {
+    return Container(
+      width: MediaQuery.of(context).size.width * .95,
+      decoration: BoxDecoration(
+        color: tertiaryColor,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(10),
+        child: Center(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text(
+                    "Exercises",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 25,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  Spacer(),
+                  // GestureDetector(
+                  //   onTap: () {
+                  //     createExercise();
+                  //   },
+                  //   child: Icon(
+                  //     Icons.add_box_outlined,
+                  //     color: Colors.white,
+                  //     size: 25.0,
+                  //   ),
+                  // ),
+                  SizedBox(
+                    width: 25,
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      setState(
+                        () {
+                          upperState = 1;
+                        },
+                      );
+                    },
+                    child: Icon(
+                      Icons.search,
+                      color: Colors.white,
+                      size: 25.0,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget upperSearchExpanded() {
+    return Column(
+      children: [
+        Container(
+          width: MediaQuery.of(context).size.width * .95,
+          decoration: BoxDecoration(
+            color: tertiaryColor,
+            borderRadius: BorderRadius.only(
+              bottomLeft: Radius.circular(filterState == 1 ? 0 : 10),
+              bottomRight: Radius.circular(filterState == 1 ? 0 : 10),
+              topLeft: Radius.circular(10),
+              topRight: Radius.circular(10),
+            ),
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(10),
+            child: Center(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        "Exercises",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 25,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      Spacer(),
+                      // GestureDetector(
+                      //   onTap: () {
+                      //     createExercise();
+                      //   },
+                      //   child: Icon(
+                      //     Icons.add_box_outlined,
+                      //     color: Colors.white,
+                      //     size: 25.0,
+                      //   ),
+                      // ),
+                      SizedBox(
+                        width: 25,
+                      ),
+                      Container(
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(
+                              () {
+                                upperState = 0;
+                              },
+                            );
+                          },
+                          child: Icon(
+                            upperState == 1
+                                ? Icons.manage_search
+                                : Icons.search,
+                            color:
+                                upperState == 1 ? Colors.amber : Colors.white,
+                            size: 25.0,
+                          ),
+                        ),
+                      )
+                    ],
+                  ),
+                  const Text(
+                    "  Exercise Name:",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          border: Border.all(
+                            color: Colors.white,
+                            width: 2.0,
+                          ),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        height: 30,
+                        width: MediaQuery.of(context).size.width * 0.80,
+                        child: const TextField(
+                          decoration: InputDecoration(
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                          ),
+                        ),
+                      ),
+                      Spacer(),
+                      GestureDetector(
+                        child: Icon(
+                          filterState == 1
+                              ? Icons.filter_alt
+                              : Icons.filter_alt_outlined,
+                          color: filterState == 1 ? Colors.amber : Colors.white,
+                        ),
+                        onTap: () {
+                          print("filterState---> $filterState");
+                          setState(() {
+                            filterState = filterState == 1 ? 0 : 1;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        filterState == 1 ? filter() : SizedBox()
+      ],
+    );
+  }
+
+  Widget upperStateAdjust() {
+    return upperState == 0 ? upperSearchBase() : upperSearchExpanded();
+  }
+
   @override
   Widget build(BuildContext context) {
     _exercisesFuture = ref.watch(exerciseFetchProvider);
@@ -120,300 +423,212 @@ class _PickExerciseState extends ConsumerState<PickExercise> {
       drawer: const NavigationDrawerContent(),
       body: Stack(
         children: [
-          Container(
-            height: MediaQuery.of(context).size.height * 0.27,
-            width: MediaQuery.of(context).size.width,
-            decoration: BoxDecoration(
-              color: tertiaryColor,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Column(
-              children: [
-                Row(
-                  children: [],
-                ),
-              ],
-            ),
-          ),
-          Positioned(
-            top: 85,
-            left: 20,
-            right: 20,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  "  Exercise Name:",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    border: Border.all(
-                      color: Colors.white,
-                      width: 2.0,
-                    ),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  height: 30,
-                  width: MediaQuery.of(context).size.width * 0.90,
-                  child: const TextField(
-                    decoration: InputDecoration(
-                      border: InputBorder.none,
-                      enabledBorder: InputBorder.none,
-                      focusedBorder: InputBorder.none,
-                    ),
-                  ),
-                ),
-                const SizedBox(
-                  height: 5,
-                ),
-                Row(
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          "  Parts:",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            border: Border.all(
-                              color: Colors.white,
-                              width: 2.0,
-                            ),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          height: 30,
-                          width: MediaQuery.of(context).size.width * 0.29,
-                          child: dropDown(_bodyPart, _selectedItemPart,
-                              (String? newValue) {
-                            setState(() {
-                              _selectedItemPart = newValue!;
-                            });
-                          }),
-                        ),
-                      ],
-                    ),
-                    const Spacer(),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          "  Intensity:",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            border: Border.all(
-                              color: Colors.white,
-                              width: 2.0,
-                            ),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          height: 30,
-                          width: MediaQuery.of(context).size.width * 0.29,
-                          child: dropDown(intensity, selectedIntensity,
-                              (String? newValue) {
-                            setState(() {
-                              selectedIntensity = newValue!;
-                            });
-                          }),
-                        ),
-                      ],
-                    ),
-                    const Spacer(),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          "  Tag:",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            border: Border.all(
-                              color: Colors.white,
-                              width: 2.0,
-                            ),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          height: 30,
-                          width: MediaQuery.of(context).size.width * 0.29,
-                          child: dropDown(_favorite, _selectedItemFavorite,
-                              (String? newValue) {
-                            setState(() {
-                              _selectedItemFavorite = newValue!;
-                            });
-                          }),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const Positioned(
-            top: 55,
-            left: 20,
-            child: Text(
-              "Exercises",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 25,
-                fontWeight: FontWeight.w400,
+          Column(
+            children: [
+              const Header(),
+              SizedBox(
+                height: MediaQuery.of(context).size.height * 0.01,
               ),
-            ),
-          ),
-          const Header(),
-
-          Positioned(
-            top: 190,
-            left: 16,
-            right: 16,
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              child: NameIndicator(
-                controller: _pageController,
-                names: ["All Exercises", "Current Exercises"],
+              upperStateAdjust(),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [],
               ),
-            ),
-          ),
-
-          Positioned(
-            top: 240,
-            right: 5,
-            left: 5,
-            child: Container(
-              height: 500,
-              child: PageView(
-                      controller: _pageController,
-                      children: <Widget>[
-                        Container(
-                          height: 500,
-                          child: SingleChildScrollView(
-                            child: Column(
-                              children: _exercisesFuture.map(
-                                (exercise) {
-                                  return Container(
-                                    width: MediaQuery.of(context).size.width *
-                                        0.90,
-                                    margin: const EdgeInsets.symmetric(
-                                        horizontal: 5.0),
-                                    child: Stack(
-                                      children: [
-                                        ExerciseCard(
-                                          exercise: exercise,
-                                        ),
-                                        Positioned(
-                                          bottom: 5,
-                                          right: 5,
-                                          child: GestureDetector(
-                                            onTap: () {
-                                              addRemoveExercise(exercise.id);
-                                            },
-                                            child: Icon(
-                                              pickedExercise
-                                                      .contains(exercise.id)
-                                                  ? Icons.add_circle
-                                                  : Icons
-                                                      .add_circle_outline_sharp,
-                                              color: secondaryColor,
-                                              size: 30,
-                                            ),
-                                          ),
-                                        )
-                                      ],
-                                    ),
-                                  );
-                                },
-                              ).toList(),
-                            ),
-                          ),
-                        ),
-                        Container(
-                          height: 500,
-                          child: SingleChildScrollView(
-                            child: Column(
-                              children: _exercisesFuture.map(
-                                (exercise) {
-                                  return pickedExercise.contains(exercise.id)
-                                      ? Container(
-                                          width: MediaQuery.of(context)
-                                                  .size
-                                                  .width *
-                                              0.90,
-                                          margin: const EdgeInsets.symmetric(
-                                              horizontal: 5.0),
-                                          child: Stack(
-                                            children: [
-                                              ExerciseCard(
+              Container(
+                padding: const EdgeInsets.all(5),
+                child: NameIndicator(
+                  controller: _pageController,
+                  names: ["All Exercises", "Current Exercises"],
+                ),
+              ),
+              Expanded(
+                child: Container(
+                  child: PageView(
+                    controller: _pageController,
+                    children: <Widget>[
+                      Container(
+                        height: 500,
+                        child: SingleChildScrollView(
+                          child: Column(
+                            children: _exercisesFuture.map(
+                              (exercise) {
+                                return Container(
+                                  width:
+                                      MediaQuery.of(context).size.width * 0.90,
+                                  margin: const EdgeInsets.symmetric(
+                                      horizontal: 5.0),
+                                  child: Stack(
+                                    children: [
+                                      Container(
+                                        child: Row(
+                                          children: [
+                                            Container(
+                                              child: ExerciseCard(
                                                 exercise: exercise,
                                               ),
-                                              Positioned(
-                                                bottom: 5,
-                                                right: 5,
-                                                child: GestureDetector(
-                                                  onTap: () {
-                                                    addRemoveExercise(
-                                                        exercise.id);
-                                                  },
+                                              width: MediaQuery.of(context)
+                                                      .size
+                                                      .width *
+                                                  0.82,
+                                            ),
+                                            Expanded(
+                                              child: GestureDetector(
+                                                onTap: () {
+                                                  addRemoveExercise(
+                                                      exercise.id);
+                                                },
+                                                child: Container(
+                                                  height: MediaQuery.of(context)
+                                                          .size
+                                                          .height *
+                                                      0.09,
+                                                  decoration: BoxDecoration(
+                                                    color:
+                                                        pickedExercise.contains(
+                                                                exercise.id)
+                                                            ? Colors.amber
+                                                            : secondaryColor,
+                                                    border: Border.all(
+                                                      color: pickedExercise
+                                                              .contains(
+                                                                  exercise.id)
+                                                          ? Colors.amber
+                                                          : secondaryColor,
+                                                      width: 2.0,
+                                                    ),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
                                                   child: Icon(
-                                                    Icons
-                                                        .highlight_remove_sharp,
-                                                    color: secondaryColor,
-                                                    size: 30,
+                                                    pickedExercise.contains(
+                                                            exercise.id)
+                                                        ? Icons
+                                                            .remove_circle_outline
+                                                        : Icons
+                                                            .add_circle_outline_sharp,
+                                                    color: Colors.white,
+                                                    size: 25,
                                                   ),
                                                 ),
-                                              )
-                                            ],
-                                          ),
-                                        )
-                                      : SizedBox();
-                                },
-                              ).toList(),
-                            ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ).toList(),
                           ),
                         ),
-                      ],
-                    ),
-            ),
-          ),
-
-          Positioned(
-            left: 20,
-            right: 20,
-            bottom: 15,
-            child: ElevatedButton(
-              onPressed: createExercise,
-              style: ElevatedButton.styleFrom(
-                fixedSize: Size(300, 5),
-                foregroundColor: Colors.white,
-                backgroundColor: tertiaryColor,
+                      ),
+                      Container(
+                        height: 500,
+                        child: SingleChildScrollView(
+                          child: Column(
+                            children: _exercisesFuture.map(
+                              (exercise) {
+                                return pickedExercise.contains(exercise.id)
+                                    ? Container(
+                                        width:
+                                            MediaQuery.of(context).size.width *
+                                                0.90,
+                                        margin: const EdgeInsets.symmetric(
+                                            horizontal: 5.0),
+                                        child: Stack(
+                                          children: [
+                                            Container(
+                                              child: Row(
+                                                children: [
+                                                  Container(
+                                                    child: ExerciseCard(
+                                                      exercise: exercise,
+                                                    ),
+                                                    width:
+                                                        MediaQuery.of(context)
+                                                                .size
+                                                                .width *
+                                                            0.82,
+                                                  ),
+                                                  Expanded(
+                                                    child: GestureDetector(
+                                                      onTap: () {
+                                                        addRemoveExercise(
+                                                            exercise.id);
+                                                      },
+                                                      child: Container(
+                                                        height: MediaQuery.of(
+                                                                    context)
+                                                                .size
+                                                                .height *
+                                                            0.09,
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          color: pickedExercise
+                                                                  .contains(
+                                                                      exercise
+                                                                          .id)
+                                                              ? Colors.amber
+                                                              : secondaryColor,
+                                                          border: Border.all(
+                                                            color: pickedExercise
+                                                                    .contains(
+                                                                        exercise
+                                                                            .id)
+                                                                ? Colors.amber
+                                                                : secondaryColor,
+                                                            width: 2.0,
+                                                          ),
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(10),
+                                                        ),
+                                                        child: Icon(
+                                                          pickedExercise
+                                                                  .contains(
+                                                                      exercise
+                                                                          .id)
+                                                              ? Icons
+                                                                  .remove_circle_outline
+                                                              : Icons
+                                                                  .add_circle_outline_sharp,
+                                                          color: Colors.white,
+                                                          size: 25,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      )
+                                    : SizedBox();
+                              },
+                            ).toList(),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              child: const Text('Done'),
-            ),
+              Padding(
+                child: ElevatedButton(
+                  onPressed: createExercise,
+                  style: ElevatedButton.styleFrom(
+                    fixedSize: Size(300, 5),
+                    foregroundColor: Colors.white,
+                    backgroundColor: tertiaryColor,
+                  ),
+                  child: const Text('Done'),
+                ),
+                padding: EdgeInsets.all(5),
+              )
+            ],
           )
         ],
       ),

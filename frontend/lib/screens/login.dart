@@ -1,19 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/screens/home.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:frontend/models/account.dart';
+import 'package:frontend/provider/provider.dart';
+import 'package:frontend/screens/home/home.dart';
 import 'package:frontend/provider/main_settings.dart';
 import 'package:frontend/screens/register.dart';
 import 'package:frontend/services/accounts.dart';
 
-class LoginPage extends StatefulWidget {
+class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({
     super.key,
   });
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  ConsumerState<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageState extends ConsumerState<LoginPage> {
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
@@ -25,16 +28,25 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void loginUser(BuildContext context) async {
-    print("logging in");
+    // fit-user
     usernameController.text = "test901";
     passwordController.text = "test1234";
+
+    // fit-Creator
+    // usernameController.text = "fitCreatorTest123456";
+    // passwordController.text = "test123456";
     Map<String, dynamic> userData = {
       'username': usernameController.text,
       'password': passwordController.text,
     };
 
     try {
-      var response = await AccountsApiService.loginUser(userData);
+      // var response = await AccountsApiService.loginUser(userData);
+
+      var response = await AccountsApiService.loginUser(
+        ref: ref,
+        data: userData,
+      );
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Login successful')),
       );
@@ -49,6 +61,27 @@ class _LoginPageState extends State<LoginPage> {
         SnackBar(content: Text('Failed to login')),
       );
     }
+  }
+
+  void loginAsGuest() {
+    Account guestData = Account(
+      id: 0,
+      username: 'GuestAccount',
+      first_name: 'Guest',
+      last_name: 'Account',
+      email: 'guestAccount@gmail.com',
+      date_joined: '2024-08-12',
+      userType: 'Fit-User',
+      height: 170,
+      weight: 71,
+    );
+
+    ref.read(accountFetchProvider.notifier).setAccount(guestData);
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const HomePage()),
+    );
   }
 
   @override
@@ -149,7 +182,9 @@ class _LoginPageState extends State<LoginPage> {
             SizedBox(
               width: MediaQuery.of(context).size.width * 0.75,
               child: ElevatedButton(
-                onPressed: register,
+                onPressed: () {
+                  loginAsGuest();
+                },
                 style: ElevatedButton.styleFrom(
                   foregroundColor: Colors.black,
                   backgroundColor: Colors.white,

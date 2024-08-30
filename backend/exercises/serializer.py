@@ -27,9 +27,6 @@ class ExerciseSerializer(serializers.ModelSerializer):
             ).exists()
         return False
     
-    
-
-
 class AddExerciseSerializer(serializers.ModelSerializer):
 
     class Meta:

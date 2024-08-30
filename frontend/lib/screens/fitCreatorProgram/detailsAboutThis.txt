@@ -1,0 +1,11 @@
+this screen would show description about the fit creator program and all its feature
+
+it will then prompt the user to apply for it
+
+user will be able to submit certain credentials
+
+it will be then be verified by certain individuals if they are fitting to be a creator
+
+
+creator can be able to create and share exercise, workout made by fit creator is automatically published or shared to everyone(fit user can create workouts but is not published )1
+1

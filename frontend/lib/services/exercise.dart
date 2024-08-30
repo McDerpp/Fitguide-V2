@@ -8,14 +8,16 @@ import 'package:frontend/provider/provider.dart';
 import '../models/exercise.dart';
 
 class ExerciseApiService {
-  static const String baseUrl = 'http://192.168.1.8:8000/api/exercises/';
+  static const String baseUrl = 'http://192.168.1.16:8000/api/exercises/';
 
   static Future<List<Exercise>> fetchExercises() async {
     final response =
-        await http.get(Uri.parse('${baseUrl}getExerciseCard/${setup.id}'));
+        // await http.get(Uri.parse('${baseUrl}getExerciseCard/${setup.id}'));
+        await http.get(Uri.parse('${baseUrl}getExercise/'));
 
     if (response.statusCode == 200) {
       List<dynamic> jsonList = json.decode(response.body);
+      print("jsonList-->$jsonList");
       return jsonList.map((json) => Exercise.fromJson(json)).toList();
     } else {
       throw Exception('Failed to load exercises');
@@ -32,6 +34,8 @@ class ExerciseApiService {
     required String positiveNum,
     required String negativeNum,
     required String part,
+    required String estimatedTime,
+    required String MET,
     required WidgetRef ref,
     File? image,
     File? video,
@@ -46,10 +50,13 @@ class ExerciseApiService {
       ..fields['description'] = description
       ..fields['positiveNum'] = positiveNum
       ..fields['negativeNum'] = negativeNum
-      ..fields['description'] = description
       ..fields['parts'] = part
       ..fields['numExecution'] = reps
-      ..fields['numSet'] = sets;
+      ..fields['numExecution'] = reps
+      ..fields['numExecution'] = reps
+      ..fields['numSet'] = sets
+      ..fields['estimated_time'] = estimatedTime
+      ..fields['MET'] = MET;
 
     if (image != null) {
       request.files.add(await http.MultipartFile.fromPath('image', image.path));
@@ -85,6 +92,7 @@ class ExerciseApiService {
   }
 
   static Future<Exercise> editExercise({
+    required WidgetRef ref,
     required int exerciseID,
     required String name,
     required String intensity,
@@ -93,6 +101,9 @@ class ExerciseApiService {
     required String reps,
     required String positiveNum,
     required String negativeNum,
+    required String parts,
+    required String estimatedTime,
+    required String MET,
     File? image,
     File? video,
     File? positiveDataset,
@@ -102,12 +113,16 @@ class ExerciseApiService {
     final request = http.MultipartRequest('POST', uri)
       ..fields['name'] = name
       ..fields['intensity'] = intensity
+      ..fields['parts'] = parts
       ..fields['description'] = description
       ..fields['positiveNum'] = positiveNum
       ..fields['negativeNum'] = negativeNum
       ..fields['description'] = description
       ..fields['numExecution'] = reps
-      ..fields['numSet'] = sets;
+      ..fields['numSet'] = sets
+      ..fields['estimated_time'] = estimatedTime
+      ..fields['MET'] = MET;
+    ;
 
     if (image != null) {
       request.files.add(await http.MultipartFile.fromPath('image', image.path));
@@ -132,6 +147,10 @@ class ExerciseApiService {
 
     if (response.statusCode == 201) {
       final jsonResponse = jsonDecode(responseData);
+
+      ref
+          .read(exerciseFetchProvider.notifier)
+          .updateExercise(Exercise.fromJson(jsonResponse));
       return Exercise.fromJson(jsonResponse);
     } else {
       throw Exception('Failed to create Workout');

@@ -1,0 +1,12 @@
+Settings will contain:
+- different color theme presets 
+- different option for inferencing(performing exercise)
+        -inferencing mode(utilizes AI)
+            - disables video
+            - disables inferencing (counting will still occur but will only look at the last frame)[really hassle to pull off, needs configuration on the backend side specifically training part]
+            - enable showing skeleton(user would have to rely on the error indicator whether the user is in frame)
+        
+        -normal mode(user will just press a button to indicate exercise is done)
+
+
+

@@ -23,8 +23,8 @@ class Exercise {
   final List<Dataset> datasets;
   final Model model;
   final String madeBy;
+  final String met;
   final bool isFavorite;
-
 
   Exercise({
     required this.id,
@@ -46,10 +46,10 @@ class Exercise {
     required this.model,
     required this.madeBy,
     required this.isFavorite,
-
+    required this.met,
   });
 
-  static const String baseUrl = "http://192.168.1.8:8000"; // Your base URL
+  static const String baseUrl = "http://192.168.1.16:8000"; // Your base URL
 
   factory Exercise.fromJson(Map<String, dynamic> json) {
     return Exercise(
@@ -75,7 +75,8 @@ class Exercise {
           .map((item) => Model.fromJson(item))
           .toList()[0],
       madeBy: json['account']['username'],
-      isFavorite:json['is_favorited']
+      isFavorite: json['is_favorited'],
+      met: json['MET'].toString(),
     );
   }
 }

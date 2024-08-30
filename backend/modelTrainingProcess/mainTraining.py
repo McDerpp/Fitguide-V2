@@ -3,6 +3,13 @@ from pathlib import Path
 # from backend.models.models import Model
 from models.models import Model
 
+import os
+os.environ["TF_USE_LEGACY_KERAS"] = "1"
+
+
+
+
+
 import optuna
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
@@ -24,7 +31,6 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from collections import Counter
 import random as rand
-import os
 from django.contrib.sessions.backends.db import SessionStore
 
 
@@ -158,10 +164,10 @@ def trainModel(positiveDataPath, negativeDataPath,  dataset_info=None, model_inf
 
         id_num = str(rand.randint(1000, 9999))
 
-        model.save(os.path.join('media', "nonTFLiteModels"))
+        model.save(os.path.join('media', "nonTFLiteModels.keras"))
             
             
-        file_saved_path = convert_tf_to_tflite(os.path.join('media', "nonTFLiteModels"), [1, len(X_train[0]), len(
+        file_saved_path = convert_tf_to_tflite(os.path.join('media', "nonTFLiteModels.keras"), [1, len(X_train[0]), len(
             X_train[0][0])], temp, 'WM', id_num, test_loss, test_accuracy)
         checking_input_value = checking_inputs(
             checking_input_positive, checking_input_negative, file_saved_path)

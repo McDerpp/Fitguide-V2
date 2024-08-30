@@ -27,23 +27,21 @@ import 'package:circular_countdown_timer/circular_countdown_timer.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../provider/data_collection_provider.dart';
-// import '../../provider/global_variable_provider.dart';
 import '../coreFunctionality/mainUISettings.dart';
 
-import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 
 class InferencingSeamless extends ConsumerStatefulWidget {
-  // final List<Map<String, dynamic>> exercise;
   final List<Exercise> exercise;
+  final int workoutId;
 
   // final List<Exercise> exerciseDetailList;
 
   const InferencingSeamless(
     this.exercise, {
     super.key,
-    // required this.exercise,
+    required this.workoutId,
     // required this.exerciseDetailList,
   });
 
@@ -57,6 +55,8 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
 
 // THIS DOES NOT MAKE ANY SENSE BUT DONT REMOVE THIS, ITLL BREAK EVERYTHING PROB...
   int tensorInputNeeded = 9;
+
+  bool _navigated = false;
 
 // exercise detials
   String nameOfExercise = "";
@@ -172,14 +172,7 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
           setsNeeded = widget.exercise[exerciseCtr].numSet;
           numberOfExecution = widget.exercise[exerciseCtr].numExecution;
           initializeVideo(widget.exercise[exerciseCtr].videoUrl);
-        } else {
-          // Navigator.pushReplacement(
-          //   context,
-          //   MaterialPageRoute(
-          //     builder: (context) => inferencingEnd(exercise: widget.exercise),
-          //   ),
-          // );
-        }
+        } else {}
       } catch (error) {}
       setState(() {});
     }
@@ -189,7 +182,8 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => inferencingEnd(exercise: widget.exercise),
+        builder: (context) => inferencingEnd(
+            workoutID: widget.workoutId, exercise: widget.exercise),
       ),
     );
   }
@@ -225,11 +219,30 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
     super.dispose();
   }
 
+  void _navigateToNextPage() {
+    if (_navigated) return; // Prevent multiple navigations
+
+    setState(() {
+      _navigated = true;
+    });
+
+    WidgetsBinding.instance?.addPostFrameCallback((_) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+            builder: (context) => inferencingEnd(
+                workoutID: widget.workoutId, exercise: widget.exercise)),
+      );
+    });
+  }
+
   Future<void> _processImage(InputImage inputImage) async {
+    print("$exerciseCtr == $maxexercise");
+    if (exerciseCtr == maxexercise) {
+      _navigateToNextPage();
+    }
+
     if (bufferCtr == 0) {
-      // setState(() {
-      //   inferenceValue = 0;
-      // });
       inferenceValue = 0;
     }
     ;
@@ -599,6 +612,17 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
         ));
   }
 
+  Widget stopProcessAndNavigate() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => inferencingEnd(
+            workoutID: widget.workoutId, exercise: widget.exercise),
+      ),
+    );
+    return SizedBox();
+  }
+
   @override
   Widget build(
     BuildContext context,
@@ -680,21 +704,22 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
           //     ),
           //   ),
           // ),
-
-          Align(
-            alignment: Alignment.topCenter,
-            child: SizedBox(
-              width: screenWidth,
-              height: screenHeight,
-              child: DetectorView(
-                title: 'Pose Detector',
-                // customPaint: _customPaint,
-                text: _text,
-                onImage: _processImage,
-                initialCameraLensDirection: _cameraLensDirection,
-              ),
-            ),
-          ),
+          setsNeeded != setsAchieved
+              ? Align(
+                  alignment: Alignment.topCenter,
+                  child: SizedBox(
+                    width: screenWidth,
+                    height: screenHeight,
+                    child: DetectorView(
+                      title: 'Pose Detector',
+                      // customPaint: _customPaint,
+                      text: _text,
+                      onImage: _processImage,
+                      initialCameraLensDirection: _cameraLensDirection,
+                    ),
+                  ),
+                )
+              : stopProcessAndNavigate(),
 
 // -----------------------------------------------------------------------------------------------------------[Current Exercise Description]
 
@@ -756,18 +781,11 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
                           GestureDetector(
                             onTap: () {
                               // Add the navigation logic or any action you want
-                              // Navigator.push(
-                              //   context,
-                              //   MaterialPageRoute(
-                              //     builder: (context) => ExerciseScreen(
-                              //         exercise: widget.exercise[exerciseCtr]),
-                              //   ),
-                              // );
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) =>
-                                      inferencingEnd(exercise: widget.exercise),
+                                  builder: (context) => ExerciseScreen(
+                                      exercise: widget.exercise[exerciseCtr]),
                                 ),
                               );
                             },

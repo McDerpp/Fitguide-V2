@@ -8,11 +8,11 @@ import 'package:frontend/provider/provider.dart';
 import 'package:http/http.dart' as http;
 
 class WorkoutApiService {
-  static const String baseUrl = 'http://192.168.1.8:8000/api/workout/';
+  static const String baseUrl = 'http://192.168.1.16:8000/api/workout/';
 
-  static Future<List<Workout>> fetchWorkouts() async {
-    final response =
-        await http.get(Uri.parse('${baseUrl}getWorkoutCard/${setup.id}'));
+  static Future<List<Workout>> fetchWorkouts(WidgetRef ref) async {
+    final response = await http.get(Uri.parse(
+        '${baseUrl}getAllWorkout/${ref.read(accountFetchProvider).id}'));
 
     if (response.statusCode == 200) {
       List<dynamic> jsonList = json.decode(response.body);

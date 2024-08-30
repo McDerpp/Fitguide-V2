@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/provider/main_settings.dart';
 import 'package:frontend/screens/notification_library.dart';
 import 'package:frontend/screens/profile.dart';
 
@@ -16,64 +17,88 @@ class Header extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        Positioned(
-          top: 18,
-          left: 5.0,
-          child: Builder(
-            builder: (context) => IconButton(
-              color: Colors.white,
-              icon: const Icon(Icons.menu),
-              onPressed: () {
-                Scaffold.of(context).openDrawer();
-              },
-            ),
+        Container(
+          width: MediaQuery.of(context).size.width,
+          margin: const EdgeInsets.symmetric(horizontal: 1.0),
+          decoration: BoxDecoration(
+            color: mainColor,
           ),
-        ),
-        Positioned(
-          top: 30,
-          right: 10,
-          child: Row(
-            children: [
-              GestureDetector(
-                onTap: () {
-                  isNotif
-                      ? Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) =>
-                                  const NotificationLibrary()),
-                        )
-                      : null;
-                },
-                child: const Icon(
-                  Icons.notifications,
-                  color: Colors.white,
-                  size: 25.0,
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: 10,
+              right: 10,
+            ),
+            child: Column(
+              children: [
+                SizedBox(
+                  height: 25,
                 ),
-              ),
-              const SizedBox(
-                width: 15,
-              ),
-              GestureDetector(
-                onTap: () {
-                  isProfile
-                      ? Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const Profile()),
-                        )
-                      : null;
-                },
-                child: const CircleAvatar(
-                  radius: 18,
-                  backgroundColor: Colors.blue,
-                  child: Text(
-                    'CN',
-                    style: TextStyle(fontSize: 12, color: Colors.white),
-                  ),
+                Row(
+                  children: [
+                    Builder(
+                      builder: (context) => IconButton(
+                        color: Colors.white,
+                        icon: const Icon(Icons.menu),
+                        onPressed: () {
+                          Scaffold.of(context).openDrawer();
+                        },
+                      ),
+                    ),
+                    Spacer(),
+                    GestureDetector(
+                      onTap: () {
+                        isNotif
+                            ? Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) =>
+                                        const NotificationLibrary()),
+                              )
+                            : null;
+                      },
+                      child: const Icon(
+                        Icons.notifications,
+                        color: Colors.white,
+                        size: 25.0,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        isProfile
+                            ? Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => const Profile()),
+                              )
+                            : null;
+                      },
+                      child: const CircleAvatar(
+                        radius: 18,
+                        backgroundColor: Colors.blue,
+                        child: Text(
+                          'CN',
+                          style: TextStyle(fontSize: 12, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
+                Column(
+                  children: [
+                    SizedBox(
+                      height: MediaQuery.of(context).size.height * 0.01,
+                    ),
+                    Container(
+                        color: tertiaryColor,
+                        height: MediaQuery.of(context).size.height * 0.001,
+                        width: MediaQuery.of(context).size.width * 0.9),
+                    SizedBox(
+                      height: MediaQuery.of(context).size.height * 0.01,
+                    )
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ],

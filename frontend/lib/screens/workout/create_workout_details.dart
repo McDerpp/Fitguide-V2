@@ -1,27 +1,20 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/account.dart';
-import 'package:frontend/models/exercise.dart';
 import 'package:frontend/models/workout.dart';
 import 'package:frontend/widgets/upload_image.dart';
 import 'package:frontend/screens/workout/create_workout_exercise.dart';
 import 'package:frontend/provider/main_settings.dart';
-import 'package:frontend/screens/workout/workout.dart';
 
 import 'package:frontend/screens/workout/workout_data_management.dart';
 import 'package:frontend/screens/workout/workouts_library.dart';
-import 'package:frontend/services/exercise.dart';
 import 'package:frontend/services/workout.dart';
 import 'package:frontend/widgets/dialog_box.dart';
 import 'package:frontend/widgets/header.dart';
 import 'package:frontend/widgets/input_field.dart';
 import 'package:frontend/widgets/navigation_drawer.dart';
-import 'package:image_picker/image_picker.dart';
-
-import 'package:flutter_image_compress/flutter_image_compress.dart';
 
 class CreateWorkout extends ConsumerStatefulWidget {
   final bool isEdit;
@@ -50,13 +43,9 @@ class _CreateWorkoutState extends ConsumerState<CreateWorkout> {
   File? exerciseImage;
   bool isInit = false;
 
-  late Future<List<Exercise>> _currentExercisesFuture;
   List<int> pickedExercise = [];
   List<int> toRemoveExercise = [];
   List<int> toAddExercise = [];
-
-  late Future<List<Exercise>> _exercisesFuture;
-  final PageController _pageController = PageController();
 
   @override
   void initState() {
@@ -250,7 +239,7 @@ class _CreateWorkoutState extends ConsumerState<CreateWorkout> {
   Future<void> editWorkout() async {
     await validateExerciseEdit();
 
-    dynamic temp = await WorkoutApiService.editWorkoutData(
+    await WorkoutApiService.editWorkoutData(
       ref: ref,
       workoutId: int.parse(ref.read(workoutID)),
       accountId: int.parse(setup.id),
@@ -314,187 +303,194 @@ class _CreateWorkoutState extends ConsumerState<CreateWorkout> {
       drawer: const NavigationDrawerContent(),
       body: Stack(
         children: [
-          Container(
-            height: MediaQuery.of(context).size.height * 0.15,
-            width: MediaQuery.of(context).size.width,
-            decoration: BoxDecoration(
-              color: tertiaryColor,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Column(
-              children: [
-                Row(
-                  children: [],
-                ),
-              ],
-            ),
-          ),
-          Positioned(
-            top: 120,
-            left: 20,
-            right: 20,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                InputField(
-                    inputName: " Workout Name:",
-                    textController: workoutNameController),
-                Row(
+          Column(
+            children: [
+              const Header(),
+              Container(
+                width: MediaQuery.of(context).size.width * .9,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    SizedBox(
-                      width: MediaQuery.of(context).size.width * .32,
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              "Create Workout",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 25,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                            Spacer(),
+                          ],
+                        ),
+                        InputField(
+                            inputName: " Workout Name:",
+                            textController: workoutNameController),
+                        Container(
+                          width: MediaQuery.of(context).size.width * .9,
+                          child: Row(
+                            children: [
+                              SizedBox(
+                                width: MediaQuery.of(context).size.width * .40,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          "  Intensity:",
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w400,
+                                          ),
+                                        ),
+                                        Container(
+                                          decoration: BoxDecoration(
+                                            color: Colors.white,
+                                            border: Border.all(
+                                              color: Colors.white,
+                                              width: 2.0,
+                                            ),
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                          ),
+                                          height: 40,
+                                          width: MediaQuery.of(context)
+                                                  .size
+                                                  .width *
+                                              0.9,
+                                          child: dropDown(
+                                            _intensity,
+                                            _selectedItemIntensity,
+                                            (String? newValue) {
+                                              setState(
+                                                () {
+                                                  _selectedItemIntensity =
+                                                      newValue!;
+                                                },
+                                              );
+                                            },
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Spacer(),
+                              SizedBox(
+                                width: MediaQuery.of(context).size.width * .48,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    const Text(
+                                      "  Type:",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                    ),
+                                    Container(
+                                      width: MediaQuery.of(context).size.width *
+                                          .9,
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        border: Border.all(
+                                          color: Colors.white,
+                                          width: 2.0,
+                                        ),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      height: 40,
+                                      child: dropDown(
+                                        _type,
+                                        _selectedItemType,
+                                        (String? newValue) {
+                                          setState(
+                                            () {
+                                              _selectedItemType = newValue!;
+                                            },
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(
+                          height: 10,
+                        ),
+                        InputField(
+                          inputName: " Description / Instruction:",
+                          textController: descriptionNameController,
+                          isParagraph: true,
+                        ),
+                      ],
+                    ),
+                    Container(
+                      width: MediaQuery.of(context).size.width,
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            "  Intensity:",
+                            "Workout Image:",
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 12,
                               fontWeight: FontWeight.w400,
                             ),
                           ),
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              border: Border.all(
-                                color: Colors.white,
-                                width: 2.0,
-                              ),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            height: 40,
-                            width: MediaQuery.of(context).size.width * 0.9,
-                            child: dropDown(
-                              _intensity,
-                              _selectedItemIntensity,
-                              (String? newValue) {
-                                setState(
-                                  () {
-                                    _selectedItemIntensity = newValue!;
-                                  },
-                                );
-                              },
-                            ),
+                          UploadImage(
+                            isEdit: widget.isEdit,
                           ),
                         ],
                       ),
                     ),
-                    Spacer(),
-                    SizedBox(
-                      width: MediaQuery.of(context).size.width * .53,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            "  Type:",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              border: Border.all(
-                                color: Colors.white,
-                                width: 2.0,
-                              ),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            height: 40,
-                            width: MediaQuery.of(context).size.width * 0.9,
-                            child: dropDown(
-                              _type,
-                              _selectedItemType,
-                              (String? newValue) {
-                                setState(
-                                  () {
-                                    _selectedItemType = newValue!;
-                                  },
-                                );
-                              },
-                            ),
-                          ),
-                        ],
+                    const SizedBox(
+                      height: 10,
+                    ),
+                    ElevatedButton(
+                      onPressed: () async {
+                        createExercise();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        fixedSize: const Size(300, 5),
+                        foregroundColor: Colors.white,
+                        backgroundColor: tertiaryColor,
                       ),
+                      child: const Text('Add Exercises'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        createExercise();
+                        validateInput(context);
+
+                        widget.isEdit == false
+                            ? createWorkout()
+                            : editWorkout();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        fixedSize: const Size(300, 5),
+                        foregroundColor: Colors.white,
+                        backgroundColor: tertiaryColor,
+                      ),
+                      child: const Text('Create Workout'),
                     ),
                   ],
                 ),
-                const SizedBox(
-                  height: 10,
-                ),
-                InputField(
-                  inputName: " Description / Instruction:",
-                  textController: descriptionNameController,
-                  isParagraph: true,
-                ),
-              ],
-            ),
-          ),
-          const Positioned(
-            top: 55,
-            left: 20,
-            child: Text(
-              "Create Workout",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 25,
-                fontWeight: FontWeight.w400,
               ),
-            ),
-          ),
-          const Header(),
-          Positioned(
-            left: 20,
-            right: 20,
-            bottom: 15,
-            child: ElevatedButton(
-              onPressed: () {
-                createExercise();
-                validateInput(context);
-
-                widget.isEdit == false ? createWorkout() : editWorkout();
-              },
-              style: ElevatedButton.styleFrom(
-                fixedSize: const Size(300, 5),
-                foregroundColor: Colors.white,
-                backgroundColor: tertiaryColor,
-              ),
-              child: const Text('Create Workout'),
-            ),
-          ),
-          Positioned(
-            left: 20,
-            right: 20,
-            bottom: 80,
-            child: ElevatedButton(
-              onPressed: () async {
-                createExercise();
-              },
-              style: ElevatedButton.styleFrom(
-                fixedSize: const Size(300, 5),
-                foregroundColor: Colors.white,
-                backgroundColor: tertiaryColor,
-              ),
-              child: const Text('Add Exercises'),
-            ),
-          ),
-          Positioned(
-            top: 450,
-            child: Container(
-              width: MediaQuery.of(context).size.width,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  UploadImage(
-                    isEdit: widget.isEdit,
-                  ),
-                ],
-              ),
-            ),
-          ),
+            ],
+          )
         ],
       ),
     );

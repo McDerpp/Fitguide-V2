@@ -13,7 +13,7 @@ class Model {
     required this.valAccuracy,
   });
 
-  static const String baseUrl = "http://192.168.1.8:8000"; // Your base URL
+  static const String baseUrl = "http://192.168.1.16:8000"; // Your base URL
 
   factory Model.fromJson(Map<String, dynamic> json) {
     print('$baseUrl${json['model']}');

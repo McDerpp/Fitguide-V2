@@ -1,9 +1,14 @@
+import 'dart:convert';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:frontend/account.dart';
+import 'package:frontend/models/workout.dart';
+import 'package:frontend/models/workoutsDone.dart';
 import 'package:frontend/provider/provider.dart';
 import 'package:http/http.dart' as http;
 
 class HistoryApiService {
-  static const String baseUrl = 'http://192.168.1.8:8000/api/history/';
+  static const String baseUrl = 'http://192.168.1.16:8000/api/history/';
 
   static Future<void> addWorkoutFavorite({
     required WidgetRef ref,
@@ -78,6 +83,62 @@ class HistoryApiService {
       ref.read(exerciseFetchProvider.notifier).favoriteExercise(exerciseID);
     } else {
       throw Exception('Failed to load exercise');
+    }
+  }
+
+  static Future<void> addWorkoutsDone({
+    required int accountID,
+    required int workoutsID,
+    required WidgetRef ref,
+  }) async {
+    final uri = Uri.parse('${baseUrl}addWorkoutsDone/$accountID/$workoutsID/');
+
+    final response = await http.post(
+      uri,
+    );
+
+    if (response.statusCode == 204) {
+    } else {
+      throw Exception('Failed to load exercise');
+    }
+  }
+
+  static Future<List<WorkoutDone>> getWorkoutsDone({
+    required int year,
+    required int month,
+    required int day,
+  }) async {
+    final uri =
+        Uri.parse('${baseUrl}getWorkoutsDone/${setup.id}/$year/$month/$day/');
+
+    final response = await http.get(
+      uri,
+    );
+
+    if (response.statusCode == 200) {
+      List<dynamic> jsonList = json.decode(response.body);
+      return jsonList.map((json) => WorkoutDone.fromJson(json)).toList();
+    } else {
+      return throw Exception('workout done');
+    }
+  }
+
+  static Future<List<dynamic>> getWorkoutsDoneNumberMonthly({
+    required int year,
+    required int month,
+  }) async {
+    final uri = Uri.parse(
+        '${baseUrl}getWorkoutsDoneNumberMonthly/${setup.id}/$year/$month/');
+    final response = await http.get(
+      uri,
+    );
+
+    if (response.statusCode == 200) {
+      List<dynamic> jsonList = json.decode(response.body);
+      print("getWorkoutsDoneNumberMonthly---?$getWorkoutsDoneNumberMonthly");
+      return jsonList;
+    } else {
+      return throw Exception('workout done');
     }
   }
 }

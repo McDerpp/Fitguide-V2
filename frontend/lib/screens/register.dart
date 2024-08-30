@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/screens/home.dart';
+import 'package:frontend/screens/home/home.dart';
 import 'package:frontend/provider/main_settings.dart';
 import 'package:frontend/services/accounts.dart';
 import 'package:frontend/widgets/input_field.dart';
@@ -20,6 +20,9 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController lastNameController = TextEditingController();
   final TextEditingController userTypeController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+
+  final TextEditingController heightController = TextEditingController();
+  final TextEditingController weightController = TextEditingController();
 
   void registerUser() async {
     try {
@@ -45,82 +48,159 @@ class _RegisterPageState extends State<RegisterPage> {
       MaterialPageRoute(builder: (context) => const HomePage()),
     );
   }
-  // TextField(controller: usernameController, decoration: InputDecoration(labelText: 'Username')),
 
+  // TextField(controller: usernameController, decoration: InputDecoration(labelText: 'Username')),
   @override
   Widget build(BuildContext context) {
+    final keyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
       backgroundColor: mainColor,
       body: Stack(
         children: [
-          Positioned(
-            bottom: MediaQuery.of(context).size.height * 0.05,
-            left: 0,
-            right: 0,
-            child: SingleChildScrollView(
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 20.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    InputField(
-                        inputName: "Username",
-                        textController: usernameController),
-                    InputField(
-                        inputName: "Email", textController: emailController),
-                    InputField(
-                        inputName: "First Name",
-                        textController: firstNameController),
-                    InputField(
-                        inputName: "Last Name",
-                        textController: lastNameController),
-                    InputField(
-                        inputName: "Password",
-                        textController: passwordController,
-                        obscureText: true),
-                    InputField(
-                        inputName: "Confirm Password",
-                        textController: passwordController,
-                        obscureText: true),
-                    SizedBox(
-                      height: MediaQuery.of(context).size.height * 0.05,
-                    ),
-                    SizedBox(
-                      width: MediaQuery.of(context).size.width * 0.75,
-                      child: ElevatedButton(
-                        onPressed: registerUser,
-                        style: ElevatedButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          backgroundColor: tertiaryColor,
-                        ),
-                        child: const Text('Register'),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+          SingleChildScrollView(
+            padding: EdgeInsets.only(
+              bottom: keyboardVisible
+                  ? MediaQuery.of(context).viewInsets.bottom
+                  : 0,
             ),
-          ),
-          Positioned(
-            top: 0,
             child: Container(
-              height: MediaQuery.of(context).size.height * 0.15,
               width: MediaQuery.of(context).size.width,
-              decoration: BoxDecoration(
-                color: tertiaryColor,
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-          ),
-          const Positioned(
-            top: 55,
-            left: 20,
-            child: Text(
-              "Register",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 25,
-                fontWeight: FontWeight.w400,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    height: 25,
+                  ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: 25,
+                      ),
+                      Column(
+                        children: [
+                          Text(
+                            "Register",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 42,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ],
+                      )
+                    ],
+                  ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: 25,
+                      ),
+                      Column(
+                        children: [
+                          Text(
+                            "Start your fitness journey here!",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w200,
+                            ),
+                          ),
+                        ],
+                      )
+                    ],
+                  ),
+                  SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 20.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        Container(
+                          width: MediaQuery.of(context).size.width * 0.9,
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: InputField(
+                                  inputName: "First Name",
+                                  textController: firstNameController,
+                                ),
+                              ),
+                              SizedBox(width: 10),
+                              Expanded(
+                                child: InputField(
+                                  inputName: "Last Name",
+                                  textController: lastNameController,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: 10),
+                        Container(
+                          width: MediaQuery.of(context).size.width * 0.9,
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: InputField(
+                                  inputName: "Weight(kg)",
+                                  textController: weightController,
+                                  obscureText: true,
+                                ),
+                              ),
+                              SizedBox(width: 10),
+                              Expanded(
+                                child: InputField(
+                                  inputName: "Height(inches)",
+                                  textController: heightController,
+                                  obscureText: true,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: 10),
+                        InputField(
+                          inputName: "Username",
+                          textController: usernameController,
+                        ),
+                        SizedBox(height: 10),
+                        InputField(
+                          inputName: "Email",
+                          textController: emailController,
+                        ),
+                        SizedBox(height: 10),
+                        InputField(
+                          inputName: "Password",
+                          textController: passwordController,
+                          obscureText: true,
+                        ),
+                        SizedBox(height: 10),
+                        InputField(
+                          inputName: "Confirm Password",
+                          textController: passwordController,
+                          obscureText: true,
+                        ),
+                        SizedBox(
+                            height: MediaQuery.of(context).size.height * 0.05),
+                        SizedBox(
+                          width: MediaQuery.of(context).size.width * 0.75,
+                          child: ElevatedButton(
+                            onPressed: registerUser,
+                            style: ElevatedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              backgroundColor: tertiaryColor,
+                            ),
+                            child: const Text('Register'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

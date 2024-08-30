@@ -7,13 +7,18 @@ import 'package:frontend/provider/provider.dart';
 import 'package:frontend/screens/workout/create_workout_details.dart';
 import 'package:frontend/provider/main_settings.dart';
 import 'package:frontend/screens/workout/workout_data_management.dart';
-import 'package:frontend/services/workout.dart';
 import 'package:frontend/widgets/deleteConfirmation.dart';
-import 'package:frontend/widgets/dialog_box.dart';
 import 'package:frontend/widgets/header.dart';
 import 'package:frontend/widgets/name_indicator.dart';
 import 'package:frontend/widgets/navigation_drawer.dart';
 import 'package:frontend/screens/workout/workout_card.dart';
+
+class FilterCategory {
+  final String title;
+  final Map<String, bool> filters;
+
+  FilterCategory({required this.title, required this.filters});
+}
 
 class WorkoutLibrary extends ConsumerStatefulWidget {
   const WorkoutLibrary({
@@ -30,45 +35,106 @@ class _WorkoutLibraryState extends ConsumerState<WorkoutLibrary>
 
   final PageController _pageController = PageController();
 
-  final List<String> _bodyPart = ['All', 'Two', 'Three', 'Four'];
-  final List<String> _workoutType = ['All', 'Custom', 'Premade', 'Four'];
-  final List<String> _favorite = ['All', 'Favorite', 'Non-Favorite'];
+  int upperState = 0;
+  int filterState = 0;
 
-  late String _selectedItemPart = _bodyPart[0];
-  late String _selectedItemType = _workoutType[0];
-  late String _selectedItemFavorite = _favorite[0];
+  final List<FilterCategory> filterCategories = [
+    FilterCategory(
+      title: 'Difficulty',
+      filters: {
+        "Easy": false,
+        "Medium": false,
+        "Hard": false,
+        "Advance": false,
+      },
+    ),
+    FilterCategory(
+      title: 'Others',
+      filters: {
+        "Favorite": false,
+        "Non-Favorite": false,
+        "Custom": false,
+        "Premade": false,
+      },
+    ),
+  ];
 
   String title = '';
 
-  Widget dropDown(List<String> inputList, String selectedItem,
-      void Function(String?) onChanged) {
-    return DropdownButton<String>(
-      value: selectedItem,
-      hint: Text(
-        inputList[0],
-        style: const TextStyle(
-          color: Colors.black,
-          fontSize: 12,
+  Widget filter() {
+    return Container(
+      decoration: BoxDecoration(
+        color: miscColor,
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(10),
+          bottomRight: Radius.circular(10),
         ),
       ),
-      underline: Container(
-        // Customize the underline
-        height: 0,
-        color: Colors.transparent,
+      width: MediaQuery.of(context).size.width * .95,
+      height: MediaQuery.of(context).size.height * 0.25,
+      child: Padding(
+        padding: EdgeInsets.all(10),
+        child: ListView.builder(
+          itemCount: filterCategories.length,
+          itemBuilder: (context, index) {
+            final category = filterCategories[index];
+            return Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    category.title,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Wrap(
+                    spacing: 2.0,
+                    runSpacing: 1.0,
+                    children: category.filters.keys.map(
+                      (key) {
+                        return FilterChip(
+                          showCheckmark: false,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                            side: BorderSide(
+                              color: tertiaryColor!,
+                              width: 1.0,
+                            ),
+                          ),
+                          backgroundColor: category.filters[key]!
+                              ? tertiaryColor
+                              : mainColor,
+                          selectedColor: tertiaryColor,
+                          label: Text(
+                            key,
+                            style: TextStyle(
+                              color: category.filters[key]!
+                                  ? Colors.white
+                                  : Colors.white,
+                              fontSize: 12,
+                            ),
+                          ),
+                          selected: category.filters[key]!,
+                          onSelected: (bool selected) {
+                            setState(() {
+                              category.filters[key] = selected;
+                            });
+                          },
+                        );
+                      },
+                    ).toList(),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
       ),
-      items: inputList.map((String value) {
-        return DropdownMenuItem<String>(
-          value: value,
-          child: Text(
-            value,
-            style: const TextStyle(
-              color: Colors.black,
-              fontSize: 12,
-            ),
-          ),
-        );
-      }).toList(),
-      onChanged: onChanged,
     );
   }
 
@@ -113,6 +179,146 @@ class _WorkoutLibraryState extends ConsumerState<WorkoutLibrary>
     // _workoutsFuture = WorkoutApiService.fetchWorkouts();
   }
 
+  Widget upperSearchBase() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        const Header(),
+        SizedBox(
+          height: 10,
+        ),
+        Container(
+          width: MediaQuery.of(context).size.width * .95,
+          decoration: BoxDecoration(
+            color: tertiaryColor,
+            borderRadius: BorderRadius.only(
+              bottomLeft: Radius.circular(filterState == 1 ? 0 : 10),
+              bottomRight: Radius.circular(filterState == 1 ? 0 : 10),
+              topLeft: Radius.circular(10),
+              topRight: Radius.circular(10),
+            ),
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(10),
+            child: Center(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        "Workouts",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 25,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                      Spacer(),
+                      GestureDetector(
+                        onTap: () {
+                          createWorkout();
+                          inputReset();
+                        },
+                        child: Icon(
+                          Icons.add_box_outlined,
+                          color: Colors.white,
+                          size: 25.0,
+                        ),
+                      ),
+                      SizedBox(
+                        width: 25,
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          setState(
+                            () {
+                              setState(() {
+                                if (upperState == 0) {
+                                  upperState = 1;
+                                } else {
+                                  upperState = 0;
+                                  filterState = 0;
+                                }
+                              });
+                              print("upperState-->$upperState");
+                            },
+                          );
+                        },
+                        child: Icon(
+                          upperState == 1 ? Icons.manage_search : Icons.search,
+                          color: upperState == 1 ? Colors.amber : Colors.white,
+                          size: 25.0,
+                        ),
+                      ),
+                    ],
+                  ),
+                  upperState == 1
+                      ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              "  Workout Name:",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                            Row(
+                              children: [
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 2.0,
+                                    ),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  height: 30,
+                                  width:
+                                      MediaQuery.of(context).size.width * 0.80,
+                                  child: const TextField(
+                                    decoration: InputDecoration(
+                                      border: InputBorder.none,
+                                      enabledBorder: InputBorder.none,
+                                      focusedBorder: InputBorder.none,
+                                    ),
+                                  ),
+                                ),
+                                Spacer(),
+                                GestureDetector(
+                                  child: Icon(
+                                    filterState == 1
+                                        ? Icons.filter_alt
+                                        : Icons.filter_alt_outlined,
+                                    color: filterState == 1
+                                        ? Colors.amber
+                                        : Colors.white,
+                                  ),
+                                  onTap: () {
+                                    print("filterState---> $filterState");
+                                    setState(() {
+                                      filterState = filterState == 1 ? 0 : 1;
+                                    });
+                                  },
+                                ),
+                              ],
+                            )
+                          ],
+                        )
+                      : SizedBox(),
+                ],
+              ),
+            ),
+          ),
+        ),
+        filterState == 1 ? filter() : SizedBox()
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     _workoutsFuture = ref.watch(workoutsFetchProvider);
@@ -122,440 +328,100 @@ class _WorkoutLibraryState extends ConsumerState<WorkoutLibrary>
       drawer: const NavigationDrawerContent(),
       body: Stack(
         children: [
-          Container(
-            height: MediaQuery.of(context).size.height * 0.32,
-            width: MediaQuery.of(context).size.width,
-            decoration: BoxDecoration(
-              color: tertiaryColor,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Column(
-              children: [
-                Row(
-                  children: [],
+          Column(
+            children: [
+              upperSearchBase(),
+              Container(
+                padding: const EdgeInsets.all(5),
+                child: NameIndicator(
+                  controller: _pageController,
+                  names: const ["All Workout", "My Workout"],
                 ),
-              ],
-            ),
-          ),
-          Positioned(
-            top: 85,
-            left: 20,
-            right: 20,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  "  Workout Name:",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    border: Border.all(
-                      color: Colors.white,
-                      width: 2.0,
-                    ),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  height: 30,
-                  width: MediaQuery.of(context).size.width * 0.90,
-                  child: const TextField(
-                    decoration: InputDecoration(
-                      border: InputBorder.none,
-                      enabledBorder: InputBorder.none,
-                      focusedBorder: InputBorder.none,
-                    ),
-                  ),
-                ),
-                const SizedBox(
-                  height: 5,
-                ),
-                Row(
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          "  Type:",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            border: Border.all(
-                              color: Colors.white,
-                              width: 2.0,
-                            ),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          height: 30,
-                          width: MediaQuery.of(context).size.width * 0.29,
-                          child: dropDown(_bodyPart, _selectedItemPart,
-                              (String? newValue) {
-                            setState(() {
-                              _selectedItemPart = newValue!;
-                            });
-                          }),
-                        ),
-                      ],
-                    ),
-                    const Spacer(),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          "  Duration:",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            border: Border.all(
-                              color: Colors.white,
-                              width: 2.0,
-                            ),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          height: 30,
-                          width: MediaQuery.of(context).size.width * 0.29,
-                          child: dropDown(_workoutType, _selectedItemType,
-                              (String? newValue) {
-                            setState(() {
-                              _selectedItemType = newValue!;
-                            });
-                          }),
-                        ),
-                      ],
-                    ),
-                    const Spacer(),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          "  Tag:",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            border: Border.all(
-                              color: Colors.white,
-                              width: 2.0,
-                            ),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          height: 30,
-                          width: MediaQuery.of(context).size.width * 0.29,
-                          child: dropDown(_favorite, _selectedItemFavorite,
-                              (String? newValue) {
-                            setState(() {
-                              _selectedItemFavorite = newValue!;
-                            });
-                          }),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                Row(
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          "  Type:",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            border: Border.all(
-                              color: Colors.white,
-                              width: 2.0,
-                            ),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          height: 30,
-                          width: MediaQuery.of(context).size.width * 0.29,
-                          child: dropDown(_workoutType, _selectedItemType,
-                              (String? newValue) {
-                            setState(() {
-                              _selectedItemType = newValue!;
-                            });
-                          }),
-                        ),
-                      ],
-                    ),
-                    const Spacer(),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          width: MediaQuery.of(context).size.width * 0.29,
-                        ),
-                      ],
-                    ),
-                    const Spacer(),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const Positioned(
-            top: 55,
-            left: 20,
-            child: Text(
-              "Workouts",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 25,
-                fontWeight: FontWeight.w400,
               ),
-            ),
-          ),
-          const Header(),
-
-          Positioned(
-            top: 225,
-            left: 16,
-            right: 16,
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              child: NameIndicator(
-                controller: _pageController,
-                names: const ["All Workout", "My Workout"],
-              ),
-            ),
-          ),
-
-          Positioned(
-            top: 270,
-            right: 5,
-            left: 5,
-            child: Container(
-              height: 500,
-              child: PageView(
-                controller: _pageController,
-                children: <Widget>[
-                  Container(
-                    height: 500,
-                    child: SingleChildScrollView(
-                      child: Column(
-                        children: _workoutsFuture.map(
-                          (workout) {
-                            return Container(
-                              width: MediaQuery.of(context).size.width * 0.90,
-                              margin:
-                                  const EdgeInsets.symmetric(horizontal: 5.0),
-                              child: WorkoutCard(
-                                workout: workout,
-                              ),
-                            );
-                          },
-                        ).toList(),
+              Expanded(
+                child: Container(
+                  child: PageView(
+                    controller: _pageController,
+                    children: <Widget>[
+                      // all workout page
+                      Container(
+                        height: 500,
+                        child: SingleChildScrollView(
+                          child: Column(
+                            children: _workoutsFuture.map(
+                              (workout) {
+                                return Container(
+                                  width:
+                                      MediaQuery.of(context).size.width * 0.90,
+                                  margin: const EdgeInsets.symmetric(
+                                      horizontal: 5.0),
+                                  child: WorkoutCard(
+                                    workout: workout,
+                                  ),
+                                );
+                              },
+                            ).toList(),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                  Container(
-                    height: 500,
-                    child: SingleChildScrollView(
-                      child: Column(
-                        children: _workoutsFuture.map(
-                          (workout) {
-                            return workout.account.toString() == setup.id
-                                ? Container(
-                                    width: MediaQuery.of(context).size.width *
-                                        0.90,
-                                    margin: const EdgeInsets.symmetric(
-                                        horizontal: 5.0),
-                                    child: Stack(
-                                      children: [
-                                        WorkoutCard(
-                                          workout: workout,
-                                        ),
-                                        Positioned(
-                                          bottom: 0,
-                                          right: 0,
-                                          child: Padding(
-                                            padding: const EdgeInsets.all(5),
-                                            child: GestureDetector(
-                                              onTap: () {
-                                                deleteConfirmation(
-                                                    isExercise: false,
-                                                    ref: ref,
-                                                    context: context,
-                                                    id: workout.id);
-                                              },
-                                              child: Icon(
-                                                Icons.highlight_remove_sharp,
-                                                color: secondaryColor,
-                                                size: 25.0,
+                      // my workout page
+
+                      Container(
+                        height: 500,
+                        child: SingleChildScrollView(
+                          child: Column(
+                            children: _workoutsFuture.map(
+                              (workout) {
+                                return ref.read(accountFetchProvider).id ==
+                                        workout.account
+                                    ? Container(
+                                        width:
+                                            MediaQuery.of(context).size.width *
+                                                0.90,
+                                        margin: const EdgeInsets.symmetric(
+                                            horizontal: 5.0),
+                                        child: Stack(
+                                          children: [
+                                            WorkoutCard(
+                                              workout: workout,
+                                            ),
+                                            Positioned(
+                                              bottom: 0,
+                                              right: 0,
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.all(5),
+                                                child: GestureDetector(
+                                                  onTap: () {
+                                                    deleteConfirmation(
+                                                        isExercise: false,
+                                                        ref: ref,
+                                                        context: context,
+                                                        id: workout.id);
+                                                  },
+                                                  child: Icon(
+                                                    Icons
+                                                        .highlight_remove_sharp,
+                                                    color: secondaryColor,
+                                                    size: 25.0,
+                                                  ),
+                                                ),
                                               ),
                                             ),
-                                          ),
+                                          ],
                                         ),
-                                      ],
-                                    ),
-                                  )
-                                : const SizedBox();
-                          },
-                        ).toList(),
-                      ),
-                    ),
-                  )
-                ],
+                                      )
+                                    : const SizedBox();
+                              },
+                            ).toList(),
+                          ),
+                        ),
+                      )
+                    ],
+                  ),
+                ),
               ),
-
-              // Container(
-              //   height: 500,
-              //   child: FutureBuilder<List<Workout>>(
-              //     future: _workoutsFuture,
-              //     builder: (context, snapshot) {
-              //       if (snapshot.connectionState == ConnectionState.waiting) {
-              //         return Center(child: CircularProgressIndicator());
-              //       } else if (snapshot.hasError) {
-              //         return Center(child: Text('Error: ${snapshot.error}'));
-              //       } else if (snapshot.hasData) {
-              //         List<Workout> workouts = snapshot.data!;
-              //         return PageView(
-              //           controller: _pageController,
-              //           children: <Widget>[
-              //             Container(
-              //               height: 500,
-              //               child: SingleChildScrollView(
-              //                 child: Column(
-              //                   children: workouts.map(
-              //                     (workout) {
-              //                       return Container(
-              //                         width: MediaQuery.of(context).size.width *
-              //                             0.90,
-              //                         margin: const EdgeInsets.symmetric(
-              //                             horizontal: 5.0),
-              //                         child: WorkoutCard(
-              //                           workout: workout,
-              //                         ),
-              //                       );
-              //                     },
-              //                   ).toList(),
-              //                 ),
-              //               ),
-              //             ),
-              //             Container(
-              //               height: 500,
-              //               child: SingleChildScrollView(
-              //                 child: Column(
-              //                   children: workouts.map(
-              //                     (workout) {
-              //                       return workout.account.toString() == setup.id
-              //                           ? Container(
-              //                               width: MediaQuery.of(context)
-              //                                       .size
-              //                                       .width *
-              //                                   0.90,
-              //                               margin: const EdgeInsets.symmetric(
-              //                                   horizontal: 5.0),
-              //                               child: Stack(
-              //                                 children: [
-              //                                   WorkoutCard(
-              //                                     workout: workout,
-              //                                   ),
-              //                                   Positioned(
-              //                                     bottom: 0,
-              //                                     right: 0,
-              //                                     child: Padding(
-              //                                       padding: EdgeInsets.all(5),
-              //                                       child: GestureDetector(
-              //                                         onTap: () {
-              //                                           deleteConfirmation(
-              //                                               workout.id);
-              //                                         },
-              //                                         child: Icon(
-              //                                           Icons
-              //                                               .highlight_remove_sharp,
-              //                                           color: secondaryColor,
-              //                                           size: 25.0,
-              //                                         ),
-              //                                       ),
-              //                                     ),
-              //                                   ),
-              //                                 ],
-              //                               ),
-              //                             )
-              //                           : const SizedBox();
-              //                     },
-              //                   ).toList(),
-              //                 ),
-              //               ),
-              //             )
-              //           ],
-              //         );
-              //       } else {
-              //         return Center(child: Text('No data available'));
-              //       }
-              //     },
-              //   ),
-              // ),
-            ),
-          ),
-          // Positioned(
-          //   top: 250,
-          //   child: Container(
-          //     height: 500,
-          //     child: const SingleChildScrollView(
-          //       child: Column(
-          //         children: <Widget>[
-          //           WorkoutCard(
-          //             id: "090324",
-          //           ),
-          // WorkoutCard(
-          //   id: "090324",
-          // ),
-          //           WorkoutCard(
-          //             id: "090324",
-          //           ),
-
-          //           // More widgets
-          //         ],
-          //       ),
-          //     ),
-          //   ),
-          // ),
-          Positioned(
-            left: 20,
-            right: 20,
-            bottom: 15,
-            child: ElevatedButton(
-              onPressed: () {
-                createWorkout();
-                inputReset();
-              },
-              style: ElevatedButton.styleFrom(
-                fixedSize: const Size(300, 5),
-                foregroundColor: Colors.white,
-                backgroundColor: tertiaryColor,
-              ),
-              child: const Text('Create Custom Exercise'),
-            ),
+            ],
           ),
         ],
       ),

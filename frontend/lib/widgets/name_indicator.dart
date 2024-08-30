@@ -27,21 +27,55 @@ class _NameIndicatorState extends State<NameIndicator> {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
-      children: widget.names.asMap().entries.map((entry) {
-        int index = entry.key;
-        String name = entry.value;
-        bool isSelected = index == currentPage.round();
-        return Text(
-          name,
-          style: TextStyle(
-            fontSize: isSelected ? 20 : 18,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w300,
-            color: isSelected ? secondaryColor : Colors.grey,
-          ),
-        );
-      }).toList(),
+    return Container(
+      width: MediaQuery.of(context).size.width * .95,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: widget.names.asMap().entries.map(
+          (entry) {
+            int index = entry.key;
+            String name = entry.value;
+            bool isSelected = index == currentPage.round();
+            return Expanded(
+              child: GestureDetector(
+                child: Container(
+                  decoration: BoxDecoration(
+                      color: isSelected ? tertiaryColor : miscColor,
+                      borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(
+                              widget.names.length - 1 == index ? 0 : 10),
+                          bottomLeft: Radius.circular(
+                              widget.names.length - 1 == index ? 0 : 10),
+                          topRight: Radius.circular(index == 0 ? 0 : 10),
+                          bottomRight: Radius.circular(index == 0 ? 0 : 10))),
+                  child: Padding(
+                    padding: EdgeInsets.all(5),
+                    child: Center(
+                      child: Text(
+                        name,
+                        style: TextStyle(
+                          fontWeight:
+                              isSelected ? FontWeight.w600 : FontWeight.w300,
+                          color: isSelected ? secondaryColor : Colors.grey,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                onTap: () {
+                  print("index-->$index");
+                  widget.controller.animateToPage(
+                    index,
+                    duration: Duration(
+                        milliseconds: 300), // Adjust duration as needed
+                    curve: Curves.easeInOut, // Adjust curve as needed
+                  );
+                },
+              ),
+            );
+          },
+        ).toList(),
+      ),
     );
   }
 }

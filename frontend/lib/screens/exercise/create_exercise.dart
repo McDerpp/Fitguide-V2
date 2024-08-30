@@ -64,6 +64,9 @@ class _CreateExerciseState extends ConsumerState<CreateExercise> {
   final TextEditingController setsController = TextEditingController();
   final TextEditingController repsController = TextEditingController();
 
+  final TextEditingController estimateTimeController = TextEditingController();
+  final TextEditingController METController = TextEditingController();
+
   final TextEditingController negativeDatasetController =
       TextEditingController();
   final TextEditingController positiveDatasetController =
@@ -155,8 +158,12 @@ class _CreateExerciseState extends ConsumerState<CreateExercise> {
       repsController.text = ref.watch(repsProvider);
       selected_intensity = ref.watch(exerciseIntensity);
       selected_part = ref.watch(exercisePart);
-
       descriptionNameController.text = ref.watch(exerciseDescription);
+      METController.text = ref.watch(metProvider);
+      estimateTimeController.text = ref.watch(estimatedTimeProvider);
+
+      positiveDatasetController.text = ref.watch(positivedatasetNum);
+      negativeDatasetController.text = ref.watch(negativeDatasetNum);
     });
   }
 
@@ -165,11 +172,12 @@ class _CreateExerciseState extends ConsumerState<CreateExercise> {
     ref.read(repsProvider.notifier).state = repsController.text;
     ref.read(exerciseIntensity.notifier).state = selected_intensity;
     ref.read(exercisePart.notifier).state = selected_part;
-
     ref.read(exerciseDescription.notifier).state =
         descriptionNameController.text;
     ref.read(exerciseNameProvider.notifier).state = exerciseNameController.text;
-    print("exerciseNameController.text--->${exerciseNameController.text}");
+    ref.read(metProvider.notifier).state = METController.text;
+    ref.read(estimatedTimeProvider.notifier).state =
+        estimateTimeController.text;
   }
 
   void validateInput() {
@@ -275,6 +283,8 @@ class _CreateExerciseState extends ConsumerState<CreateExercise> {
     repsController.text = ref.read(repsProvider);
     exerciseNameController.text = ref.read(exerciseNameProvider);
     descriptionNameController.text = ref.read(exerciseDescription);
+    estimateTimeController.text = ref.read(estimatedTimeProvider);
+    METController.text = ref.read(metProvider);
     selected_intensity = ref.read(exerciseIntensity);
     selected_part = ref.read(exercisePart);
   }
@@ -283,20 +293,23 @@ class _CreateExerciseState extends ConsumerState<CreateExercise> {
     if (ref.read(exerciseNameProvider) != "" &&
         ref.read(exerciseIntensity) != "" &&
         ref.read(exerciseDescription) != "" &&
-        ref.read(exerciseIntensity) != "" &&
-        ref.read(exerciseDescription) != "" &&
         ref.read(setsProvider) != "" &&
         ref.read(repsProvider) != "" &&
         ref.read(setsProvider) != "0" &&
         ref.read(repsProvider) != "0" &&
+        ref.read(estimatedTimeProvider) != "" &&
+        ref.read(metProvider) != "" &&
+        ref.read(estimatedTimeProvider) != "0" &&
+        ref.read(metProvider) != "0" &&
         widget.isEdit == true) {
       await ExerciseApiService.editExercise(
+        ref: ref,
         positiveNum: ref.watch(coordinatesDataProvider).state.length.toString(),
         negativeNum:
             ref.watch(incorrectCoordinatesDataProvider).state.length.toString(),
         exerciseID: int.parse(ref.read(exerciseIDProvider)),
-        name: ref.read(exerciseNameProvider),
-        intensity: ref.read(exerciseIntensity),
+        name: exerciseNameController.text,
+        intensity: selected_intensity,
         description: ref.read(exerciseDescription),
         sets: ref.read(setsProvider),
         reps: ref.read(repsProvider),
@@ -304,7 +317,11 @@ class _CreateExerciseState extends ConsumerState<CreateExercise> {
         video: ref.read(videoPathProvider),
         positiveDataset: ref.read(positiveDatasetProvider),
         negativeDataset: ref.read(negativeDatasetProvider),
+        estimatedTime: estimateTimeController.text,
+        parts: selected_part,
+        MET: METController.text,
       );
+      print("PASSED!!!!!!!!!");
     }
   }
 
@@ -339,6 +356,8 @@ class _CreateExerciseState extends ConsumerState<CreateExercise> {
         video: ref.read(videoPathProvider),
         positiveDataset: ref.read(positiveDatasetProvider),
         negativeDataset: ref.read(negativeDatasetProvider),
+        estimatedTime: ref.read(estimatedTimeProvider),
+        MET: ref.read(metProvider),
       );
     } else {
       validateInput();
@@ -347,269 +366,285 @@ class _CreateExerciseState extends ConsumerState<CreateExercise> {
 
   @override
   Widget build(BuildContext context) {
-    initDataset();
+    widget.isEdit ? null : initDataset();
+
     return Scaffold(
       backgroundColor: mainColor,
       resizeToAvoidBottomInset: false,
       drawer: const NavigationDrawerContent(),
       body: Stack(
         children: [
-          Container(
-            height: MediaQuery.of(context).size.height * 0.15,
-            width: MediaQuery.of(context).size.width,
-            decoration: BoxDecoration(
-              color: tertiaryColor,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Column(
-              children: [
-                Row(
-                  children: [],
-                ),
-              ],
-            ),
-          ),
-          Positioned(
-            top: 120,
-            left: 20,
-            right: 20,
-            child: SizedBox(
-              height: 630,
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    InputField(
-                        inputName: " Exercise Name:",
-                        textController: exerciseNameController),
-                    Row(
-                      children: [
-                        SizedBox(
-                          width: MediaQuery.of(context).size.width * .42,
-                          child: InputField(
-                              inputName: " Reps:",
-                              textController: repsController),
-                        ),
-                        const Spacer(),
-                        SizedBox(
-                          width: MediaQuery.of(context).size.width * .42,
-                          child: InputField(
-                              inputName: " Sets:",
-                              textController: setsController),
-                        ),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        SizedBox(
-                          width: MediaQuery.of(context).size.width * .42,
-                          height: MediaQuery.of(context).size.height * 0.1,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                "  Intensity:",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  border: Border.all(
-                                    color: Colors.white,
-                                    width: 2.0,
-                                  ),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                height: 40,
-                                width: MediaQuery.of(context).size.width * 0.9,
-                                child: dropDown(
-                                  _intensity,
-                                  selected_intensity,
-                                  (String? newValue) {
-                                    setState(
-                                      () {
-                                        selected_intensity = newValue!;
-                                      },
-                                    );
-                                  },
-                                ),
-                              ),
-                              const Spacer(),
-                            ],
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const Header(),
+              SizedBox(
+                height: 630,
+                width: MediaQuery.of(context).size.width * .9,
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            "Create Exercise",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 30,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
-                        ),
-                        const Spacer(),
-                        SizedBox(
-                          width: MediaQuery.of(context).size.width * .42,
-                          height: MediaQuery.of(context).size.height * 0.1,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                "  Parts:",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  border: Border.all(
-                                    color: Colors.white,
-                                    width: 2.0,
-                                  ),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                height: 40,
-                                width: MediaQuery.of(context).size.width * 0.9,
-                                child: dropDown(
-                                  _part,
-                                  selected_part,
-                                  (String? newValue) {
-                                    setState(
-                                      () {
-                                        selected_part = newValue!;
-                                      },
-                                    );
-                                  },
-                                ),
-                              ),
-                              const Spacer(),
-                            ],
+                          Spacer()
+                        ],
+                      ),
+                      SizedBox(
+                        height: 15,
+                      ),
+                      InputField(
+                          inputName: " Exercise Name:",
+                          textController: exerciseNameController),
+                      Row(
+                        children: [
+                          SizedBox(
+                            width: MediaQuery.of(context).size.width * .42,
+                            child: InputField(
+                                isNumber: true,
+                                inputName: " Reps:",
+                                textController: repsController),
                           ),
-                        ),
-                      ],
-                    ),
-                    InputField(
-                      inputName: " Description / Instruction:",
-                      textController: descriptionNameController,
-                      isParagraph: true,
-                    ),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Text(
-                              "Pick an exercise image",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                              ),
-                            ),
-                            UploadImage(
-                              isEdit: widget.isEdit,
-                            ),
-                          ],
-                        ),
-                        const Spacer(),
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Text(
-                              "Pick a exercise video",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                              ),
-                            ),
-                            UploadVideo(isEdit: widget.isEdit),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const SizedBox(
-                      height: 15,
-                    ),
-                    SizedBox(
-                        width: MediaQuery.of(context).size.width,
-                        child: Column(
-                          children: [
-                            const Text(
-                              "Collected Datasets",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 15,
-                              ),
-                            ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
+                          const Spacer(),
+                          SizedBox(
+                            width: MediaQuery.of(context).size.width * .42,
+                            child: InputField(
+                                isNumber: true,
+                                inputName: " Sets:",
+                                textController: setsController),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          SizedBox(
+                            width: MediaQuery.of(context).size.width * .42,
+                            child: InputField(
+                                isNumber: true,
+                                inputName: " Estimated MET:",
+                                textController: METController),
+                          ),
+                          const Spacer(),
+                          SizedBox(
+                            width: MediaQuery.of(context).size.width * .42,
+                            height: MediaQuery.of(context).size.height * 0.1,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                SizedBox(
-                                  width:
-                                      MediaQuery.of(context).size.width * .42,
-                                  child: Center(
-                                    child: InputField(
-                                        isEnabled: false,
-                                        inputName: " Positive:",
-                                        textController:
-                                            positiveDatasetController),
+                                const Text(
+                                  "  Intensity:",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w100,
+                                    fontSize: 14,
                                   ),
                                 ),
-                                Spacer(),
-                                SizedBox(
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 2.0,
+                                    ),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  height: 40,
                                   width:
-                                      MediaQuery.of(context).size.width * .42,
-                                  child: Center(
-                                    child: InputField(
-                                        isEnabled: false,
-                                        inputName: " Negative:",
-                                        textController:
-                                            negativeDatasetController),
+                                      MediaQuery.of(context).size.width * 0.9,
+                                  child: dropDown(
+                                    _intensity,
+                                    selected_intensity,
+                                    (String? newValue) {
+                                      setState(
+                                        () {
+                                          selected_intensity = newValue!;
+                                        },
+                                      );
+                                    },
                                   ),
                                 ),
+                                const Spacer(),
                               ],
                             ),
-                          ],
-                        )),
-                    ElevatedButton(
-                      onPressed: () {
-                        saveData();
-                        navigateAddDataset();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        fixedSize: const Size(300, 5),
-                        foregroundColor: Colors.white,
-                        backgroundColor: tertiaryColor,
+                          ),
+                        ],
                       ),
-                      child: const Text('Add Dataset'),
-                    ),
-                    const SizedBox(
-                      height: 15,
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        widget.isEdit ? editData() : submitData();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        fixedSize: const Size(300, 5),
-                        foregroundColor: Colors.white,
-                        backgroundColor: tertiaryColor,
+                      Row(
+                        children: [
+                          SizedBox(
+                            width: MediaQuery.of(context).size.width * .42,
+                            child: InputField(
+                                isNumber: true,
+                                inputName: " Estimated Time(MIN):",
+                                textController: estimateTimeController),
+                          ),
+                          const Spacer(),
+                          SizedBox(
+                            width: MediaQuery.of(context).size.width * .42,
+                            height: MediaQuery.of(context).size.height * 0.1,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                const Text(
+                                  "  Parts:",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w100,
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 2.0,
+                                    ),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  height: 40,
+                                  width:
+                                      MediaQuery.of(context).size.width * 0.9,
+                                  child: dropDown(
+                                    _part,
+                                    selected_part,
+                                    (String? newValue) {
+                                      setState(
+                                        () {
+                                          selected_part = newValue!;
+                                        },
+                                      );
+                                    },
+                                  ),
+                                ),
+                                const Spacer(),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                      child: const Text('Create Workout'),
-                    ),
-                  ],
+                      InputField(
+                        inputName: " Description / Instruction:",
+                        textController: descriptionNameController,
+                        isParagraph: true,
+                      ),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text(
+                                "Exercise image",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              UploadImage(
+                                isEdit: widget.isEdit,
+                              ),
+                            ],
+                          ),
+                          const Spacer(),
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text(
+                                "Exercise video",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              UploadVideo(isEdit: widget.isEdit),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(
+                        height: 15,
+                      ),
+                      SizedBox(
+                          width: MediaQuery.of(context).size.width,
+                          child: Column(
+                            children: [
+                              const Text(
+                                "Collected Datasets",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                ),
+                              ),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  SizedBox(
+                                    width:
+                                        MediaQuery.of(context).size.width * .42,
+                                    child: Center(
+                                      child: InputField(
+                                          isEnabled: false,
+                                          inputName: " Positive:",
+                                          textController:
+                                              positiveDatasetController),
+                                    ),
+                                  ),
+                                  Spacer(),
+                                  SizedBox(
+                                    width:
+                                        MediaQuery.of(context).size.width * .42,
+                                    child: Center(
+                                      child: InputField(
+                                          isEnabled: false,
+                                          inputName: " Negative:",
+                                          textController:
+                                              negativeDatasetController),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          )),
+                      ElevatedButton(
+                        onPressed: () {
+                          saveData();
+                          navigateAddDataset();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          fixedSize: const Size(300, 5),
+                          foregroundColor: Colors.white,
+                          backgroundColor: tertiaryColor,
+                        ),
+                        child: const Text('Add Dataset'),
+                      ),
+                      const SizedBox(
+                        height: 15,
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          widget.isEdit ? editData() : submitData();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          fixedSize: const Size(300, 5),
+                          foregroundColor: Colors.white,
+                          backgroundColor: tertiaryColor,
+                        ),
+                        child: const Text('Create Workout'),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
-          const Positioned(
-            top: 55,
-            left: 20,
-            child: Text(
-              "Create Exercise",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 25,
-                fontWeight: FontWeight.w400,
-              ),
-            ),
-          ),
-          const Header(),
         ],
       ),
     );

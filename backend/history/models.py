@@ -4,10 +4,12 @@ from workouts.models import Workout
 from accounts.models import Account
 
 class WorkoutsDone(models.Model):
+    time_spent = models.IntegerField(default=69,)
+    calories_burned = models.IntegerField(default=69,)    
+
     workout = models.ForeignKey(Workout,default=1, on_delete=models.CASCADE)
     performed_at = models.DateTimeField(auto_now_add=True, null=True)
     account = models.ForeignKey(Account,default=1, on_delete=models.CASCADE)
-
 
 class FavoriteWorkout(models.Model):
     workout = models.ForeignKey(Workout,default=1, on_delete=models.CASCADE)

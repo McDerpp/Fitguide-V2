@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 //
 // #5A639C
 
-Color mainColor = Color(0xFF0C0C0C);
-Color secondaryColor = Color(0xFF5C8374);
-Color workoutColor = Color.fromARGB(255, 17, 38, 22);
-Color? tertiaryColor = Color(0xFF183D3D);
-Color? miscColor = Color(0xFFF9DDE8B);
+Color mainColor = Color.fromARGB(255, 31, 30, 30);
+Color secondaryColor = Color.fromARGB(255, 72, 189, 232);
+Color workoutColor = Color.fromARGB(255, 24, 103, 132);
+Color? tertiaryColor = Color.fromARGB(255, 40, 156, 199);
+Color? miscColor = Color.fromARGB(255, 32, 67, 92);

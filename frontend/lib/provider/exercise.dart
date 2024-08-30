@@ -51,6 +51,7 @@ class ExerciseNotifier extends StateNotifier<List<Exercise>> {
       model: tempExercise.model,
       madeBy: tempExercise.madeBy,
       isFavorite:!tempExercise.isFavorite,
+      met:tempExercise.met.toString()
     );
     updateExercise(updatedExercise);
   }

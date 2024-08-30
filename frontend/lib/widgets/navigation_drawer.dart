@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/screens/history/calendar.dart';
 import 'package:frontend/screens/exercise/exercises_library.dart';
-import 'package:frontend/screens/home.dart';
+import 'package:frontend/screens/home/home.dart';
 import 'package:frontend/screens/login.dart';
 import 'package:frontend/screens/notification_library.dart';
 import 'package:frontend/screens/profile.dart';
@@ -46,7 +46,7 @@ class NavigationDrawerContent extends StatelessWidget {
                 name,
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 18,
+                  fontSize: 15,
                   fontWeight: FontWeight.w300,
                 ),
               ),
@@ -130,7 +130,35 @@ class NavigationDrawerContent extends StatelessWidget {
                       Calendar(),
                     ),
                     Icons.calendar_month),
+                nav(
+                    "Games",
+                    navigate(
+                      context,
+                      Calendar(),
+                    ),
+                    Icons.gamepad_outlined),
+                nav(
+                    "Dances",
+                    navigate(
+                      context,
+                      Calendar(),
+                    ),
+                    Icons.music_note_outlined),
                 Spacer(),
+                nav(
+                    "Fit-Creator Program",
+                    navigate(
+                      context,
+                      const LoginPage(),
+                    ),
+                    Icons.accessibility_new),
+                nav(
+                    "Log Update",
+                    navigate(
+                      context,
+                      const LoginPage(),
+                    ),
+                    Icons.add_chart),
                 nav(
                     "Logout",
                     navigate(

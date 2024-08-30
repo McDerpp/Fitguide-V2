@@ -1,3 +1,7 @@
+
+import os
+os.environ["TF_USE_LEGACY_KERAS"] = "1"
+
 import tensorflow as tf
 from tensorflow.keras.models import Sequential,load_model
 from tensorflow.keras.layers import LSTM, Dense, Bidirectional, BatchNormalization
@@ -15,7 +19,8 @@ from sklearn.model_selection import train_test_split
 # from tensorflow_model_optimization.quantization.keras import quantize_model
 from collections import Counter
 import random as rand
-import os
+
+
 
 from . import modelTrainingSettings as settings
 

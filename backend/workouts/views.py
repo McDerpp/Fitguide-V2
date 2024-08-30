@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from .models import Workout,WorkoutExercise
 from exercises.models import Exercise
 from exercises.serializer import ExerciseSerializer
+from django.db.models import Q
 
 from .serializer import AddWorkoutSerializer, WorkoutSerializer,WorkoutExerciseSerializer
 
@@ -88,18 +89,18 @@ def deleteWorkoutExercise(request,workout_id,exercise_id):
         return Response({"detail": "Workout not found."}, status=status.HTTP_404_NOT_FOUND)
 
 
-
-@api_view(['GET'])    
-def getWorkoutCard(request,account_id):
+# this gets all workouts that belongs to an account with usertype as FitCreator and also includes all of the workout created by the user
+@api_view(['GET'])
+def getAllWorkout(request, account_id):
     if request.method == 'GET':
         search = request.query_params.get('search', None)
-        if search:
-            workout = Workout.objects.filter(name__icontains=search).order_by('name')
-        else:
-            workout = Workout.objects.all().order_by('name')
 
-        serializer = WorkoutSerializer(workout, context={'account_id': account_id},many=True)
-    return Response(serializer.data)
+        q_filter = Q(account__userType='Fit-Creator') | Q(account__id=account_id)
+        
+        workout = Workout.objects.filter(q_filter).order_by('name')     
+
+        serializer = WorkoutSerializer(workout, context={'account_id': account_id}, many=True)
+        return Response(serializer.data)
 
 
 
