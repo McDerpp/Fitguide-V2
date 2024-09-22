@@ -1,3 +1,5 @@
+import 'package:frontend/services/mainAPI.dart';
+
 class Workout {
   final int id;
   final String name;
@@ -23,7 +25,6 @@ class Workout {
       required this.exercise,
       is_favorited});
 
-  static const String baseUrl = "http://192.168.1.16:8000";
 
   factory Workout.fromJson(Map<String, dynamic> json) {
     print("json['isFavorite']--->${json['isFavorite']}");
@@ -34,7 +35,7 @@ class Workout {
       description: json['description'],
       account: json['account']['id'],
       madeBy: json['account']['username'],
-      imageUrl: '$baseUrl${json['image']}',
+      imageUrl: '${api.baseUrl}${json['image']}',
       isFavorite: json['is_favorited'] ?? false,
       exercise: (json['exercises'] as List)
           .map((item) => item['exercise'] as int)

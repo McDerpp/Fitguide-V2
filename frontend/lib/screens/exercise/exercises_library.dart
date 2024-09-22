@@ -1,22 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/account.dart';
-import 'package:frontend/main.dart';
 import 'package:frontend/models/exercise.dart';
 import 'package:frontend/provider/provider.dart';
-import 'package:frontend/screens/dataCollection/p1_base_collection.dart';
 import 'package:frontend/provider/main_settings.dart';
 import 'package:frontend/screens/exercise/create_exercise.dart';
 import 'package:frontend/screens/exercise/exercise_data_management.dart';
 import 'package:frontend/screens/workout/workout_data_management.dart';
-import 'package:frontend/services/exercise.dart';
 import 'package:frontend/screens/exercise/exercise_card.dart';
 import 'package:frontend/widgets/deleteConfirmation.dart';
-import 'package:frontend/widgets/dialog_box.dart';
 import 'package:frontend/widgets/header.dart';
 import 'package:frontend/widgets/name_indicator.dart';
 import 'package:frontend/widgets/navigation_drawer.dart';
-import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 class FilterCategory {
   final String title;
@@ -91,10 +86,6 @@ class _ExerciseLibraryState extends ConsumerState<ExerciseLibrary> {
       },
     ),
   ];
-
-  late String _selectedItemPart = _bodyPart[0];
-  late String _selectedItemType = _workoutType[0];
-  late String _selectedItemFavorite = _favorite[0];
 
   String title = '';
 

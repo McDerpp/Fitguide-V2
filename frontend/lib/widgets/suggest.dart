@@ -48,7 +48,7 @@ class _SuggestState extends State<Suggest> {
                     autoPlayCurve: Curves.fastOutSlowIn,
                     pauseAutoPlayOnTouch: true,
                     viewportFraction:
-                        0.4, // Adjust the fraction to show multiple items
+                        0.4, 
                   ),
                   items: exercises.map(
                     (item) {

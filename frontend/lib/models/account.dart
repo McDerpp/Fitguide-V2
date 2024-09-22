@@ -26,6 +26,7 @@ class Account {
   });
 
   factory Account.fromJson(Map<String, dynamic> json) {
+    print("testse --> ${json['height']}");
     print(
         "BMI--> ${json['weight'].toDouble() / ((json['height'].toDouble() / 100) * (json['height'].toDouble() / 100))}");
 

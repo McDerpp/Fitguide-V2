@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/models/workoutsDone.dart';
 import 'package:frontend/provider/main_settings.dart';
-import 'package:frontend/screens/workout/workout_card.dart';
 import 'package:frontend/screens/workout/workout_card_done.dart';
 import 'package:frontend/services/history.dart';
-import 'package:frontend/widgets/progress_information.dart';
 import 'package:frontend/widgets/spaceLine.dart';
 import 'package:table_calendar/table_calendar.dart';
 
@@ -286,20 +284,7 @@ class _DayProgressState extends State<DayProgress> {
                     }
                     return null;
                   },
-                  // selectedBuilder: (context, day, focusedDay) {
-                  //   return Container(
-                  //     margin: const EdgeInsets.all(6.0),
-                  //     alignment: Alignment.center,
-                  //     decoration: const BoxDecoration(
-                  //       color: Colors.orange,
-                  //       shape: BoxShape.circle,
-                  //     ),
-                  //     child: Text(
-                  //       '${day.day}',
-                  //       style: const TextStyle(color: Colors.white),
-                  //     ),
-                  //   );
-                  // },
+    
                 ),
               ),
             ),

@@ -1,9 +1,9 @@
-import 'dart:io';
+// ignore_for_file: unused_field
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:frontend/screens/coreFunctionality/globalVariables.dart';
 import 'package:frontend/screens/coreFunctionality/provider_collection.dart';
+import 'package:frontend/screens/inferencing/inferencing/mainUISettings.dart';
 
 import 'package:video_player/video_player.dart';
 

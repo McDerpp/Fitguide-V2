@@ -1,9 +1,13 @@
 from django.urls import path
+from django.urls import path, include
 from . import views
 
 urlpatterns = [
-    path('api/accounts/register/', views.register, name='register'),
-    path('api/accounts/login/', views.login, name='login'),
-    path('api/accounts/editAccount/', views.editAccount, name='editAccount'),
+    path('register/', views.register, name='register'),
+
+    path('login/', views.login, name='login'),
+    path('editAccount/', views.editAccount, name='editAccount'),
+    path('oauth_callback/', views.oauth_callback, name='oauth_callback'),
+
 
 ]

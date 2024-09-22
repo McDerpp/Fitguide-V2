@@ -2,14 +2,13 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:frontend/provider/data_collection_provider.dart';
-import 'package:frontend/provider/main_settings.dart';
-import 'package:frontend/screens/coreFunctionality/globalVariables.dart';
+import 'package:frontend/screens/coreFunctionality/data_collection_provider.dart';
 import 'package:frontend/screens/exercise/create_exercise.dart';
-import 'package:frontend/screens/exercise/exercise_data_management.dart';
+import 'package:frontend/screens/inferencing/inferencing/mainUISettings.dart';
+import 'package:frontend/widgets/custom_button.dart';
+import 'package:image_picker/image_picker.dart';
 
 // import 'package:frontend/screens/coreFunctionality/provider_collection.dart';
-import 'package:frontend/widgets/custom_button.dart';
 
 import 'package:path_provider/path_provider.dart';
 import 'dart:async';
@@ -86,7 +85,7 @@ class _collectionDataP1State extends ConsumerState<collectionDataP1> {
         ? '$externalPath/coordinatesCollected.txt'
         : '$externalPath/coordinatesCollected(incorrect).txt';
 
-    print("filpathhh -->${filePath} ");
+    print("filpathhh -->$filePath ");
     File file = File(filePath);
     file.writeAsStringSync('');
     int progressCtr = 0;
@@ -153,7 +152,7 @@ class _collectionDataP1State extends ConsumerState<collectionDataP1> {
         progress = ctr;
       });
       await Future.delayed(
-          Duration(milliseconds: 100)); // Add a delay of 100 milliseconds
+          const Duration(milliseconds: 100)); // Add a delay of 100 milliseconds
     }
   }
 
@@ -194,9 +193,9 @@ class _collectionDataP1State extends ConsumerState<collectionDataP1> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
                 Center(
-                  child: Container(
+                  child: SizedBox(
                     width: screenWidth * 0.75,
-                    child: Text('${seriousFacts[seriousFactsRandIndex]}',
+                    child: Text(seriousFacts[seriousFactsRandIndex],
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: textSizeModif["smallText2"]! * screenWidth,
@@ -204,9 +203,9 @@ class _collectionDataP1State extends ConsumerState<collectionDataP1> {
                         )),
                   ),
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 progressCtr != 2
-                    ? Container(
+                    ? SizedBox(
                         width: screenWidth * 0.85,
                         height: screenHeight * 0.05, // Specify a fixed width
                         child: LinearProgressIndicator(

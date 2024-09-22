@@ -3,7 +3,6 @@ import 'package:flutter/widgets.dart';
 import 'package:frontend/provider/main_settings.dart';
 import 'package:frontend/screens/history/day_progress.dart';
 import 'package:frontend/screens/history/monthly_progress.dart';
-import 'package:frontend/screens/history/weekly_progress.dart';
 import 'package:frontend/widgets/name_indicator.dart';
 
 class DailyProgress extends StatelessWidget {

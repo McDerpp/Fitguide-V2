@@ -20,8 +20,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = "django-insecure-nxjm8ix#cp9a7pyfd15%ai7+krfbawlm(=$c=nxrje^wpx1nzx"
+CLIENT_ID = "123k8e52BKZe7c0unzk391GikxWomL7gKbkINDTcbWy"
+CLIENT_SECRET = "tAKbVFUpueyrk9dAZ7QD6vB9zI6kbUZAFcrnmV49jQ4eq70jVJYuztVddFJiloQ3NqoiH0RxHoiSYSbxs2xqvHXcVpCmqf4lMtDGHO6ImyAH2uQwLFnvffmYdNGcIFjz"
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -38,16 +40,16 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    'rest_framework',
+    'oauth2_provider',
     "accounts",
     "exercises",
     "workouts",
     "notifications",
     "history",
     "models",
-
-
-
 ]
+
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -57,7 +59,33 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    'oauth2_provider.middleware.OAuth2TokenMiddleware',
 ]
+
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny',
+    ],
+}
+
+
+OAUTH2_PROVIDER = {
+    'SCOPES': {
+        'read': 'Read access',
+        'write': 'Write access',
+        'admin': 'Administrative access',
+    },
+    'ACCESS_TOKEN_EXPIRE_SECONDS': 36000, 
+    'REFRESH_TOKEN_EXPIRE_SECONDS': 1209600, 
+    'APPLICATION_SERVER_ERROR_URI': None,
+    'APPLICATION_NAME': None,
+}
+
 
 ROOT_URLCONF = "backend.urls"
 
@@ -144,3 +172,4 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
+LOGIN_URL = '/admin/login/'

@@ -121,7 +121,7 @@ Widget countdownTimer(
     // height: MediaQuery.of(context).size.height / 2,
     width: MediaQuery.of(context).size.width / 4,
     height: MediaQuery.of(context).size.height / 4,
-    ringColor: Colors.white!,
+    ringColor: Colors.white,
     ringGradient: null,
     fillColor: Colors.red,
     fillGradient: null,

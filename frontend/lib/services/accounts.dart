@@ -3,10 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/account.dart';
 import 'package:frontend/models/account.dart';
 import 'package:frontend/provider/provider.dart';
+import 'package:frontend/services/mainAPI.dart';
 import 'package:http/http.dart' as http;
 
 class AccountsApiService {
-  static const String baseUrl = 'http://192.168.1.16:8000/api/accounts/';
+  static String baseUrl = '${api.baseUrl}/api/accounts/';
 
   static Future<Map<String, dynamic>> registerUser(
       Map<String, dynamic> data) async {
@@ -60,9 +61,11 @@ class AccountsApiService {
       },
       body: jsonEncode(data),
     );
+    print("response-->$response");
 
     if (response.statusCode == 200) {
       final apiData = jsonDecode(response.body);
+      print("apiData--->${apiData}");
       try {
         setup.updateFromApi(apiData);
       } catch (error) {

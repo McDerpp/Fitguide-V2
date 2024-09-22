@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:frontend/provider/main_settings.dart';
 import 'package:frontend/services/history.dart';
@@ -20,6 +18,7 @@ class _CalendarMinState extends State<CalendarMin> {
   List<int> temp = [25, 2, 3, 1, 3, 2, 4];
   int maxValue = 0;
   int barModif = 0;
+  int dayTemp = 0;
 
   Map<int, Map<String, dynamic>> tempData = {};
   Map<int, Map<String, dynamic>> finalData = {};
@@ -27,24 +26,26 @@ class _CalendarMinState extends State<CalendarMin> {
   @override
   void initState() {
     super.initState();
-    initDateInfo();
+    initDateInfo().then((_) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        scrollToCurrent();
+      });
+    });
   }
 
   void scrollToCurrent() {
+    double scrollPosition =
+        MediaQuery.of(context).size.width * 0.9 / 7 * DateTime.now().day;
     _scrollController.animateTo(
-      MediaQuery.of(context).size.width * 0.9 / 7 * DateTime.now().day,
+      scrollPosition,
       duration: Duration(milliseconds: 300),
       curve: Curves.easeInOut,
     );
   }
 
   Future<void> initDateInfo() async {
-    DateFormat formatter = DateFormat('yyyy-MM-dd');
     DateFormat dayFormat = DateFormat('EEE');
-    DateTime temp = DateTime.now();
     DateTime filler = DateTime.now();
-
-    int dayTemp = 0;
 
     dateInfo = await HistoryApiService.getWorkoutsDoneNumberMonthly(
         year: DateTime.now().year, month: DateTime.now().month);
@@ -54,11 +55,11 @@ class _CalendarMinState extends State<CalendarMin> {
         maxValue = data['count'];
       }
       Map<String, dynamic> valueInit = {'count': 1, 'day': 'Mon'};
-      temp = DateTime.parse(data["day"]);
-      dayTemp = DateTime.parse(data["day"]).day;
+      DateTime tempDate = DateTime.parse(data["day"]);
+      dayTemp = tempDate.day;
       valueInit['count'] = data['count'];
-      valueInit['day'] = dayFormat.format(temp);
-      tempData[temp.day] = valueInit;
+      valueInit['day'] = dayFormat.format(tempDate);
+      tempData[tempDate.day] = valueInit;
     }
 
     lastDay = DateTime(DateTime.now().year, DateTime.now().month + 1, 1)
@@ -103,10 +104,17 @@ class _CalendarMinState extends State<CalendarMin> {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: finalData.entries.map((entry) {
+                double safeMaxValue = maxValue > 0 ? maxValue.toDouble() : 1.0;
+
                 double containerHeight =
                     (MediaQuery.of(context).size.height * .06) *
-                            (entry.value['count'] / maxValue) +
+                            (entry.value['count'] / safeMaxValue) +
                         MediaQuery.of(context).size.height * .02;
+
+                containerHeight = containerHeight.isNaN || containerHeight < 0
+                    ? 0
+                    : containerHeight;
+
                 return Column(
                   children: [
                     Container(
@@ -163,15 +171,13 @@ class _CalendarMinState extends State<CalendarMin> {
               }).toList(),
             ),
           ),
-        )
+        ),
       ],
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    scrollToCurrent();
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

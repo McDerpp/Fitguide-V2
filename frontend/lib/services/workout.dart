@@ -1,14 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:frontend/account.dart';
 import 'package:frontend/models/exercise.dart';
 import 'package:frontend/models/workout.dart';
 import 'package:frontend/provider/provider.dart';
+import 'package:frontend/services/mainAPI.dart';
 import 'package:http/http.dart' as http;
 
 class WorkoutApiService {
-  static const String baseUrl = 'http://192.168.1.16:8000/api/workout/';
+  static String baseUrl = '${api.baseUrl}/api/workouts/';
 
   static Future<List<Workout>> fetchWorkouts(WidgetRef ref) async {
     final response = await http.get(Uri.parse(
@@ -146,8 +146,6 @@ class WorkoutApiService {
       uri,
     );
 
-    final responseData = response.body;
-
     if (response.statusCode == 201) {
     } else {
       throw Exception('Failed to load exercise');
@@ -164,8 +162,6 @@ class WorkoutApiService {
     final response = await http.delete(
       uri,
     );
-
-    final responseData = response.body;
 
     if (response.statusCode == 204) {
       // Handle successful response

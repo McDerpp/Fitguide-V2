@@ -27,8 +27,8 @@ urlpatterns = [
 #          name='update_exercise'),
          
 # =======================================================================
-     path('api/models/addDataset/', views.addDataset,name='addDataset'),
-     path('api/models/trainModelRequest/<int:exercise_id>/', views.trainModelRequest,name='trainModelRequest')
+     path('addDataset/', views.addDataset,name='addDataset'),
+     path('trainModelRequest/<int:exercise_id>/', views.trainModelRequest,name='trainModelRequest')
 
 
 

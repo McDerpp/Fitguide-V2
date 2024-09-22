@@ -2,8 +2,7 @@ import 'package:frontend/models/workout.dart';
 
 DateTime parseDate(String? dateStr) {
   if (dateStr == null || dateStr.isEmpty) {
-    // Return a default date or handle it as appropriate
-    return DateTime.now(); // Default to current time or handle differently
+    return DateTime.now(); 
   }
   return DateTime.parse(dateStr);
 }

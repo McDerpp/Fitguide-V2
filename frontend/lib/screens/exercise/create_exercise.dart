@@ -4,27 +4,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/account.dart';
-import 'package:frontend/models/exercise.dart';
-import 'package:frontend/provider/data_collection_provider.dart';
-import 'package:frontend/screens/dataCollection/p1_base_collection.dart';
-import 'package:frontend/screens/exercise/exercise_data_management.dart';
+import 'package:frontend/screens/coreFunctionality/data_collection_provider.dart';
+import 'package:frontend/screens/dataCollection/create_exercise/base_collection_v1.dart';
 import 'package:frontend/widgets/upload_image.dart';
-import 'package:frontend/screens/workout/create_workout_exercise.dart';
 import 'package:frontend/provider/main_settings.dart';
-import 'package:frontend/screens/workout/workout.dart';
 
-import 'package:frontend/screens/workout/workout_data_management.dart';
-import 'package:frontend/screens/workout/workouts_library.dart';
 import 'package:frontend/services/exercise.dart';
-import 'package:frontend/services/workout.dart';
 import 'package:frontend/widgets/dialog_box.dart';
 import 'package:frontend/widgets/header.dart';
 import 'package:frontend/widgets/input_field.dart';
 import 'package:frontend/widgets/navigation_drawer.dart';
 import 'package:frontend/widgets/upload_video.dart';
-import 'package:image_picker/image_picker.dart';
-
-import 'package:flutter_image_compress/flutter_image_compress.dart';
 
 class CreateExercise extends ConsumerStatefulWidget {
   final bool isEdit;
@@ -80,13 +70,9 @@ class _CreateExerciseState extends ConsumerState<CreateExercise> {
   File? exerciseImage;
   bool isInit = false;
 
-  late Future<List<Exercise>> _currentExercisesFuture;
   List<int> pickedExercise = [];
   List<int> toRemoveExercise = [];
   List<int> toAddExercise = [];
-
-  late Future<List<Exercise>> _exercisesFuture;
-  final PageController _pageController = PageController();
 
   @override
   void initState() {
@@ -104,13 +90,6 @@ class _CreateExerciseState extends ConsumerState<CreateExercise> {
       MaterialPageRoute(builder: (context) => const BaseCollection()),
     );
   }
-
-  // setsController.text;
-  // repsController.text;
-  // negativeDatasetController.text;
-  // positiveDatasetController.text;
-  // exerciseNameController.text;
-  // descriptionNameController.text;
 
   Widget dropDown(List<String> inputList, String selectedItem,
       void Function(String?) onChanged) {
@@ -637,7 +616,7 @@ class _CreateExerciseState extends ConsumerState<CreateExercise> {
                           foregroundColor: Colors.white,
                           backgroundColor: tertiaryColor,
                         ),
-                        child: const Text('Create Workout'),
+                        child: const Text('Create Exercise'),
                       ),
                     ],
                   ),

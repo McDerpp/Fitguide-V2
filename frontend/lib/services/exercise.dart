@@ -1,14 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:frontend/account.dart';
+import 'package:frontend/services/mainAPI.dart';
 import 'package:http/http.dart' as http;
 import 'package:frontend/provider/provider.dart';
 
 import '../models/exercise.dart';
 
 class ExerciseApiService {
-  static const String baseUrl = 'http://192.168.1.16:8000/api/exercises/';
+  static  String baseUrl = '${api.baseUrl}/api/exercises/';
 
   static Future<List<Exercise>> fetchExercises() async {
     final response =

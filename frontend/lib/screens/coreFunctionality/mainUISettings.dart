@@ -1,7 +1,4 @@
 // import 'dart:js';
-import 'dart:ui';
-
-import 'package:flutter/material.dart';
 
 // Color tertiaryColor = const Color.fromARGB(255, 27, 26, 26);
 // Color secondaryColor = const Color.fromARGB(255, 207, 84, 84);

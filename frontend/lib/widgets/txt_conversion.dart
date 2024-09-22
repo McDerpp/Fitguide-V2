@@ -22,7 +22,7 @@ class _TextConversionState extends State<TextConversion> {
   ) async {
     BackgroundIsolateBinaryMessenger.ensureInitialized(inputs['token']);
     Directory externalDir = await getApplicationDocumentsDirectory();
-    String externalPath = externalDir!.path;
+    String externalPath = externalDir.path;
     String filePath = '$externalPath/coordinatesCollected.txt';
     File file = File(filePath);
     file.writeAsStringSync('');

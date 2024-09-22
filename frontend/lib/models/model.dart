@@ -1,3 +1,5 @@
+import 'package:frontend/services/mainAPI.dart';
+
 class Model {
   final int id;
   final int exercise;
@@ -13,14 +15,13 @@ class Model {
     required this.valAccuracy,
   });
 
-  static const String baseUrl = "http://192.168.1.16:8000"; // Your base URL
+  static const String baseUrl = "http://192.168.1.12:8000"; // Your base URL
 
   factory Model.fromJson(Map<String, dynamic> json) {
-    print('$baseUrl${json['model']}');
     return Model(
       id: json['id'],
       exercise: json['exercise'],
-      model: '$baseUrl/${json['model']}',
+      model: '${api.baseUrl}/${json['model']}',
       valLoss: json['valLoss'].toDouble(),
       valAccuracy: json['valAccuracy'].toDouble(),
     );

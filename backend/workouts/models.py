@@ -3,8 +3,6 @@ from accounts.models import Account
 from exercises.models import Exercise
 
 
-
-
 class Workout(models.Model):
     account = models.ForeignKey(Account,default=1, on_delete=models.CASCADE)
     name = models.CharField(max_length=100,default="THIS IS THE NAME")

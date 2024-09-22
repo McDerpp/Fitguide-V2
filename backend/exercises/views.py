@@ -48,21 +48,15 @@ def add(request):
                     positive_serializer.save()
                     negative_serializer.save()
 
-
                     positive_dataset_training = positive_serializer.instance.dataset.path
                     negative_dataset_training = negative_serializer.instance.dataset.path
 
                     positive_dataset_training = os.path.join('media', positive_dataset_training)
                     negative_dataset_training = os.path.join('media', negative_dataset_training)
 
-
-
                     trained_model = trainModel(positive_dataset_training,negative_dataset_training)
                     trained_model =trained_model.replace("media/","")
                     file_path = os.path.join(settings.MEDIA_ROOT, trained_model)
-                    print("file_path--->",file_path)
-
-
 
                     model_data = Model(
                         exercise = exercise_serializer.instance,
@@ -119,9 +113,7 @@ def edit(request,exercise_id):
             positive_dataset_training = os.path.join('media', positive_dataset_training)
         
         else:
-            return Response(positive_serializer_edit.errors, status=status.HTTP_400_BAD_REQUEST)     
-           
-        
+            return Response(positive_serializer_edit.errors, status=status.HTTP_400_BAD_REQUEST)                     
                    
         if negative_dataset is not None:
             negative_data = {
@@ -167,11 +159,6 @@ def edit(request,exercise_id):
         return Response(exercise_serializer.data, status=status.HTTP_201_CREATED)
         
 
-
-
-
-
-
 @api_view(['GET'])
 def getExerciseCard(request,account_id):
     name = request.GET.get("name")
@@ -197,35 +184,6 @@ def getExerciseCard(request,account_id):
     
         
     return Response(serializer.data)
-
-# @api_view(['GET'])
-# def getExerciseCard(request):
-#     name = request.GET.get("name")
-#     parts = request.GET.get("parts")
-#     intensity = request.GET.get("intensity")
-#     tag = request.GET.get("tag")
-
-#     exercises = Exercise.objects.all()
-
-#     if name:
-#         exercises = exercises.filter(name__icontains=name)
-
-#     if parts:
-#         exercises = exercises.filter(parts=parts)
-
-#     if intensity:
-#         exercises = exercises.filter(intensity=intensity)
-
-#     if tag:
-#         exercises = exercises.filter(tag=tag)
-
-#     serializer = ExerciseSerializer(exercises,context={'account_id': account_id}, many=True)
-    
-        
-#     return Response(serializer.data)
-
-
-
 
 
 @api_view(['GET'])    

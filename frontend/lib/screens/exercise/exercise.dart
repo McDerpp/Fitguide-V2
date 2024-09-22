@@ -1,10 +1,7 @@
-import 'dart:ffi';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/account.dart';
 import 'package:frontend/models/exercise.dart';
@@ -17,8 +14,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:video_player/video_player.dart';
 import 'package:http/http.dart' as http;
 import 'package:video_thumbnail/video_thumbnail.dart';
-import 'package:frontend/models/dataset.dart';
-import 'package:frontend/models/model.dart';
 
 class ExerciseScreen extends ConsumerStatefulWidget {
   final Exercise exercise;
@@ -88,16 +83,13 @@ class _ExerciseState extends ConsumerState<ExerciseScreen> {
   }
 
   Future<void> downloadAndGenerateThumbnail(String videoUrl) async {
-    // Download video
     final response = await http.get(Uri.parse(videoUrl));
     if (response.statusCode == 200) {
-      // Save video to temporary location
       final tempDir = await getTemporaryDirectory();
       final videoPath = '${tempDir.path}/temp_video.mp4';
       final file = File(videoPath);
       await file.writeAsBytes(response.bodyBytes);
 
-      // Generate thumbnail
       final uint8list = await VideoThumbnail.thumbnailData(
         video: videoPath,
         imageFormat: ImageFormat.JPEG,
@@ -169,7 +161,6 @@ class _ExerciseState extends ConsumerState<ExerciseScreen> {
 
   @override
   Widget build(BuildContext context) {
-    print("isRebuilding");
     return Scaffold(
       body: SizedBox(
         width: MediaQuery.of(context).size.width,
@@ -177,10 +168,11 @@ class _ExerciseState extends ConsumerState<ExerciseScreen> {
         child: Stack(
           children: [
             Positioned(
-                child: AspectRatio(
-              aspectRatio: _controller.value.aspectRatio,
-              child: VideoPlayer(_controller),
-            )),
+              child: AspectRatio(
+                aspectRatio: _controller.value.aspectRatio,
+                child: VideoPlayer(_controller),
+              ),
+            ),
             Positioned(
               bottom: 0,
               left: 0,

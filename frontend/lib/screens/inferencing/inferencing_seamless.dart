@@ -2,32 +2,27 @@
 
 import 'dart:async';
 import 'package:camera/camera.dart';
+import 'package:frontend/misc/logicFunction/isolateProcessPDV.dart';
+import 'package:frontend/misc/pose/detector_view.dart';
+import 'package:frontend/misc/pose/pose_painter.dart';
+import 'package:frontend/models/exercise.dart';
+import 'package:frontend/provider/main_settings.dart';
+import 'package:frontend/screens/coreFunctionality/pose_provider.dart';
+import 'package:frontend/screens/dataCollection/create_exercise/data_collection_settings.dart';
+import 'package:frontend/widgets/count_down.dart';
+import 'package:frontend/screens/inferencing/inferencing_base.dart';
+import 'package:tflite_flutter/tflite_flutter.dart' as tfl;
 
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
-import 'package:flutter_animation_progress_bar/flutter_animation_progress_bar.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:frontend/misc/logicFunction/isolateProcessPDV.dart';
-import 'package:frontend/misc/pose/detector_view.dart';
-import 'package:frontend/misc/pose/pose_painter.dart';
-import 'package:frontend/models/exercise.dart';
-
-import 'package:frontend/provider/main_settings.dart';
-import 'package:frontend/screens/coreFunctionality/globalVariables.dart';
-import 'package:frontend/screens/exercise/exercise.dart';
-import 'package:frontend/screens/inferencing/inferencing_end.dart';
-import 'package:frontend/widgets/dialog_box_notif.dart';
 
 import 'package:google_ml_kit/google_ml_kit.dart';
 
 import 'package:circular_countdown_timer/circular_countdown_timer.dart';
 import 'package:video_player/video_player.dart';
-
-import '../../provider/data_collection_provider.dart';
-import '../coreFunctionality/mainUISettings.dart';
 
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
@@ -36,13 +31,10 @@ class InferencingSeamless extends ConsumerStatefulWidget {
   final List<Exercise> exercise;
   final int workoutId;
 
-  // final List<Exercise> exerciseDetailList;
-
-  const InferencingSeamless(
-    this.exercise, {
+  const InferencingSeamless({
     super.key,
     required this.workoutId,
-    // required this.exerciseDetailList,
+    required this.exercise,
   });
 
   @override
@@ -51,157 +43,50 @@ class InferencingSeamless extends ConsumerStatefulWidget {
 }
 
 class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  late VideoPlayerController videoController;
+  CameraController? _cameraController;
+  final CountDownController _controller = CountDownController();
 
 // THIS DOES NOT MAKE ANY SENSE BUT DONT REMOVE THIS, ITLL BREAK EVERYTHING PROB...
   int tensorInputNeeded = 9;
 
-  bool _navigated = false;
+// NOTE!: majority of variables are initialized globally since it is used by different functions to lessen boiler plates
 
-// exercise detials
-  String nameOfExercise = "";
-  File model = File("");
-  File video = File("");
-  // List<String> ignoredCoordinates = [];
-  List<int> ignoredCoordinates = [];
-
+// [INITIAL STATES]
+  //initializes the number of reps per sets
   int numberOfExecution = 0;
+  //initializes the sets per exercise
   int setsNeeded = 0;
+  // sets the rest duration(currently not implemented)
   int restDuration = 0;
+  // checks if all exercise are done
   bool isEnd = false;
+  // checks if any navigation is done(THIS WAS TO SOLVE SOME UNKNOWN ERRORS)
+  bool _navigated = false;
+  // checks whether all coodinates are presents(will error if not all are detected)
+  bool allCoordinatesPresent = false;
+  // current state is rest(countdown towards another exercise)
+  bool restState = false;
+  // transitioning to reststate(recently finished a set)
+  bool restingInitialized = false;
+  // initial value for the bar for inferencing
+  double inferenceValue = 50;
+  // current number of reps(resets every after sets)
+  int inferenceCorrectCtr = 0;
+  //  current number of sets(resets every after exercise)
+  int setsAchieved = 0;
+  // tracks what the current exercise is
+  int exerciseCtr = 0;
+  // tracks how many exercise
+  int maxexercise = 5;
 
-  // isolate initialization for heavy process
-  RootIsolateToken rootIsolateTokenNormalization = RootIsolateToken.instance!;
-  RootIsolateToken rootIsolateTokenNoMovement = RootIsolateToken.instance!;
-  RootIsolateToken rootIsolateTokenInferencing = RootIsolateToken.instance!;
-
-  List<List<Pose>> poseQueue = [];
-  List<List<double>> queueNormalizedListQueue = [];
-
-  List<double> prevCoordinates = [];
-  List<double> currentCoordinates = [];
-  List<List<double>> inferencingList = [];
-  List<List<double>> tempPrevCurr = [];
-  int framesCapturedCtr = 0;
-
-  String resultAvgFrames = '';
-  String dynamicText = 'no movement \n detected';
-  String dynamicCtr = '0';
-  int execTotalFrames = 0;
-  int numExec = 0;
-  double avgFrames = 0.0;
-
-  Map<String, dynamic> inferencingData = {};
-  Map<String, dynamic> checkMovementIsolate = {};
-
-  List<Map<String, dynamic>> queueNormalizeData = [];
-  List<Map<String, dynamic>> queueMovementData = [];
-  List<Map<String, dynamic>> queueInferencingData = [];
-  int noMovementCtr = 0;
+  // after certain amount of time when no succesful exercise is done, video preview will be shown
   int showPreviewCtr = 0;
 
-  bool isExerciseInit = false;
-
-  // ---------------------countdown variables----------------------------------------------------------
-
-  List<double> translatedCoordinates = [];
-  List<dynamic> coordinatesData = [];
-  // bool isSet = true;
-  // int collectingCtr = 0;
-  List<int> igrnoreCoordinatesList = [];
-  int executionStateResult = 0;
-  bool allCoordinatesPresent = false;
-  bool restState = false;
-  bool restingInitialized = false;
-
-  double inferenceValue = 50;
-
-  int buffer = 4;
+  // tracks number of current buffer
   int bufferCtr = 0;
 
-  List<bool> inferenceBuffer = [];
-
-  late VideoPlayerController _controller;
-  late double scale;
-
-  // late int inferencingBuffer;
-  // ---------------------inferencing data mode variables----------------------------------------------------------
-  int inferenceCorrectCtr = 0;
-  int setsAchieved = 0;
-  int exerciseCtr = 0;
-
-  late int maxexercise;
-  late List<Map<String, dynamic>> tempexercise;
-
-  // ---------------------countdown variables----------------------------------------------------------
-  final CountDownController controller = CountDownController();
-
-  bool nowPerforming = false;
-  bool countDowntoPerform = false;
-  bool checkCountDowntoPerform = false;
-
-  @override
-  void initState() {
-    super.initState();
-    // ref.watch(showPreviewProvider.notifier).state = true;
-  }
-
-  Future<File> downloadFile(String url, String filename) async {
-    final response = await http.get(Uri.parse(url));
-    if (response.statusCode == 200) {
-      final directory = await getApplicationDocumentsDirectory();
-      final file = File('${directory.path}/$filename');
-      return file.writeAsBytes(response.bodyBytes);
-    } else {
-      throw Exception('Failed to download file');
-    }
-  }
-
-  void initNextExercuse() async {
-    if (isExerciseInit == false) {
-      isExerciseInit = true;
-      maxexercise = widget.exercise.length;
-      buffer = ref.watch(bufferProvider);
-
-      try {
-        if (exerciseCtr < maxexercise) {
-          nameOfExercise = widget.exercise[exerciseCtr].name;
-          model = await downloadFile(
-              widget.exercise[exerciseCtr].model.model, 'temp_model');
-          ignoredCoordinates = widget.exercise[exerciseCtr].ignoreCoordinates;
-          setsNeeded = widget.exercise[exerciseCtr].numSet;
-          numberOfExecution = widget.exercise[exerciseCtr].numExecution;
-          initializeVideo(widget.exercise[exerciseCtr].videoUrl);
-        } else {}
-      } catch (error) {}
-      setState(() {});
-    }
-  }
-
-  void isDoneNavigate() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => inferencingEnd(
-            workoutID: widget.workoutId, exercise: widget.exercise),
-      ),
-    );
-  }
-
-  void initializeVideo(String video) {
-    _controller = VideoPlayerController.networkUrl(Uri.parse(video))
-      ..setLooping(true)
-      ..initialize().then((_) {
-        setState(() {
-          _controller.play();
-        });
-      }).catchError((error) {});
-
-    scale = 1 /
-        (_controller!.value.aspectRatio *
-            MediaQuery.of(context).size.aspectRatio);
-  }
-
+  // Pose detector variables
   final PoseDetector _poseDetector =
       PoseDetector(options: PoseDetectorOptions());
   bool _canProcess = true;
@@ -210,35 +95,290 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
   String? _text;
   var _cameraLensDirection = CameraLensDirection.front;
 
+// exercise detials initialization------------------------------------------------------
+  String nameOfExercise = "";
+  File model = File("");
+  File video = File("");
+  List<int> ignoredCoordinates = [];
+
+  // isolate initialization for heavy process---------------------------
+  // Reasoning: Isolates allows certain heavy process to have a separate processes from ui, through isolate it wouldnt interfere with rendering with UI(wont make it lag)
+  RootIsolateToken rootIsolateTokenNormalization = RootIsolateToken.instance!;
+  RootIsolateToken rootIsolateTokenNoMovement = RootIsolateToken.instance!;
+  RootIsolateToken rootIsolateTokenInferencing = RootIsolateToken.instance!;
+
+  //movement checking -----------------------------------------
+  // stores previous coordinates
+  List<double> prevCoordinates = [];
+
+  // stores current coordinates
+  List<double> currentCoordinates = [];
+
+  // stores current and previous coordinates for difference to determine if threshold is met to be considered a movement
+  List<List<double>> tempPrevCurr = [];
+
+  // if movement is detected, it is stored in here
+  List<Map<String, dynamic>> queueMovementData = [];
+
+  //movement checking ---------------------------------------
+  // used to hold the movementData to be normalized into values of 0 - 1
+  List<Map<String, dynamic>> queueNormalizeData = [];
+  // holds normalized data
+  List<double> translatedCoordinates = [];
+
+  //Inferencing ----------------------------------------
+  // data derived from normalized coordinates
+  List<List<double>> inferencingList = [];
+  // holds the list of inferencing lists
+  List<Map<String, dynamic>> queueInferencingData = [];
+  // buffers the inferencing(this disregards some of the data to improve performance)
+  List<bool> inferenceBuffer = [];
+
+  // ---------------------countdown variables-----------
+
+  List<dynamic> coordinatesData = [];
+  List<int> igrnoreCoordinatesList = [];
+  int executionStateResult = 0;
+  double scale = 0;
+  bool isShowPreview = true;
+
+  final List<int> exerciseElapsedTime = [];
+
+  List<List<int>> setsReps = [];
+  // ---------------------inferencing data mode variables----------------------------------------------------------
+
+  bool nowPerforming = true;
+  bool countDowntoPerform = false;
+
+  // Per exercise time
+  late Timer _timer;
+  int framesCollected = 0;
+  bool _isRunning = false;
+  int _secondsElapsed = 0;
+
+  // timer for exercise timer limit
+  late Timer _exerciseTimer;
+  int _secondsElapsedExercise = 0;
+
+  bool isInitNext = false;
+
+  late tfl.Interpreter modelInferencing;
+
+  List<double> normalizedData = [];
+
+  bool isVideoInitialize = false;
+
   @override
-  void dispose() async {
+  void initState() {
+    super.initState();
+    _startTimer();
+    _initNextExercse();
+    _initSetsReps();
+  }
+
+  void _startTimer() {
+    if (!_isRunning) {
+      setState(() {
+        _isRunning = true;
+      });
+      _timer = Timer.periodic(Duration(seconds: 1), (Timer timer) {
+        setState(() {
+          _secondsElapsed++;
+        });
+      });
+      _exerciseTimer = Timer.periodic(Duration(seconds: 1), (Timer timer) {
+        setState(() {
+          _secondsElapsedExercise++;
+        });
+      });
+    }
+  }
+
+  void _stopTimer() {
+    if (_isRunning) {
+      _timer.cancel();
+      setState(() {
+        _isRunning = false;
+      });
+    }
+  }
+
+  Future<File> _downloadFile(String url, String filename) async {
+    final response = await http.get(Uri.parse(url));
+    if (response.statusCode == 200) {
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/$filename');
+
+      // final Map<String, dynamic> modelData =
+      //     await initializedModel(await file.writeAsBytes(response.bodyBytes));
+      // tensorInputNeeded = modelData["inputTensorNeeded"];
+      // modelInferencing = modelData["model"];
+
+      return file.writeAsBytes(response.bodyBytes);
+    } else {
+      throw Exception('Failed to download file');
+    }
+  }
+
+  void _initSetsReps() {
+// [reps,sets]
+    for (int ctr = 0; ctr < widget.exercise.length; ctr++) {
+      setsReps.add([0, 0]);
+    }
+  }
+
+  void _initNextExercse() async {
+    // if (isExerciseInit == false) {
+    //   isExerciseInit = true;
+    maxexercise = widget.exercise.length;
+    try {
+      // List<dynamic> decodedList =
+      //     jsonDecode(widget.exercise[exerciseCtr].ignoreCoordinates);
+      // List<int> ignoreList = List<int>.from(decodedList[0]);
+      if (exerciseCtr < maxexercise) {
+        print("mode test -> ${widget.exercise[exerciseCtr].model.model}");
+        try {
+          model = await _downloadFile(
+              '${widget.exercise[exerciseCtr].model.model}', 'temp_model');
+        } catch (error) {
+          print("Error at download file -> $error");
+        }
+        try {
+          _initializeVideo("${widget.exercise[exerciseCtr].videoUrl}");
+        } catch (error) {
+          print("Error at intialize video -> $error");
+        }
+
+        nameOfExercise = widget.exercise[exerciseCtr].name;
+
+        // ignoredCoordinates = ignoreList;
+        setsNeeded = widget.exercise[exerciseCtr].numSet;
+        numberOfExecution = widget.exercise[exerciseCtr].numExecution;
+      } else {}
+    } catch (error) {
+      print("error detected initializing ->$error");
+    }
+    setState(() {});
+    // }
+  }
+
+  void _isDoneNavigate() {
+    videoController.dispose();
+
+    // Navigator.pushReplacement(
+    //   context,
+    //   MaterialPageRoute(
+    //     builder: (context) => inferencingEnd(
+    //       workout: widget.workout,
+    //       elapsedTime: _secondsElapsed,
+    //       exerciseElapsedTime: exerciseElapsedTime,
+    //       setsReps: setsReps,
+    //     ),
+    //   ),
+    // );
+  }
+
+  void onChangeState(bool stateChange) {
+    setState(() {
+      restState = stateChange;
+    });
+  }
+
+  void onChangeExecise(int changeExercise) {
+    setState(() {
+      print("changing exercise -> $changeExercise");
+      exerciseCtr = changeExercise;
+      _initNextExercse();
+    });
+  }
+
+  void _stopProcessAndNavigate() {
+    dispose();
+    // Navigator.push(
+    //   context,
+    //   MaterialPageRoute(
+    //     builder: (context) => inferencingEnd(
+    //       workout: widget.workout,
+    //       elapsedTime: _secondsElapsed,
+    //       exerciseElapsedTime: exerciseElapsedTime,
+    //       setsReps: setsReps,
+    //     ),
+    //   ),
+    // );
+  }
+
+  void _initializeVideo(String video) {
+    if (isVideoInitialize) {
+      videoController.dispose();
+      isVideoInitialize = false;
+
+      print("video disposed");
+    }
+    videoController = VideoPlayerController.networkUrl(Uri.parse(video))
+      ..setLooping(true)
+      ..initialize().then((_) {
+        setState(() {
+          videoController.setVolume(0);
+          videoController.play();
+        });
+      }).catchError((error) {});
+
+    scale = 1 /
+        (videoController.value.aspectRatio *
+            MediaQuery.of(context).size.aspectRatio);
+
+    isVideoInitialize = true;
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    disposeAll();
+  }
+
+  Future disposeAll() async {
     _canProcess = false;
     _poseDetector.close();
-
-    _controller.dispose();
-    super.dispose();
+    videoController.dispose();
+    _cameraController!.dispose();
+    _exerciseTimer.cancel();
+    _stopTimer();
   }
 
   void _navigateToNextPage() {
-    if (_navigated) return; // Prevent multiple navigations
-
+    if (_navigated) return;
     setState(() {
       _navigated = true;
     });
-
-    WidgetsBinding.instance?.addPostFrameCallback((_) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-            builder: (context) => inferencingEnd(
-                workoutID: widget.workoutId, exercise: widget.exercise)),
-      );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Navigator.pushReplacement(
+      //   context,
+      //   MaterialPageRoute(
+      //     builder: (context) => inferencingEnd(
+      //       workout: widget.workout,
+      //       elapsedTime: _secondsElapsed,
+      //       exerciseElapsedTime: exerciseElapsedTime,
+      //       setsReps: setsReps,
+      //     ),
+      //   ),
+      // );
     });
   }
 
+  void _handleControllerInitialized(CameraController controller) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() {
+          _cameraController = controller;
+        });
+      }
+    });
+  }
+
+  void videoPreviewSuggest() {}
+
   Future<void> _processImage(InputImage inputImage) async {
-    print("$exerciseCtr == $maxexercise");
-    if (exerciseCtr == maxexercise) {
+    if (exerciseCtr >= maxexercise) {
       _navigateToNextPage();
     }
 
@@ -269,31 +409,20 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
 
 // [ISOLATE FUNCTION] INFERENCING ==========================================================================================================================
     if (queueNormalizeData.isNotEmpty) {
-// buffering code
-      if (bufferCtr >= buffer) {
+      if (bufferCtr >= bufferNum) {
         bufferCtr = 0;
 
         compute(coordinatesRelativeBoxIsolate, queueNormalizeData.elementAt(0))
             .then((value) {
           queueNormalizeData.removeAt(0);
-// this is a list that stores coordinates for checking of movement
           tempPrevCurr.add(value['translatedCoordinates']);
 
-// if its performing(after countdown) then collect translated coordinates to be compiled later on
-// later on... the checkmovement it will be checked if previous present coordinates has gone beyond the threshold
-// if yes then this coordinate is compiled
           if (nowPerforming == true) {
             translatedCoordinates = value['translatedCoordinates'];
           }
 
-//checking for all relevant coordinates are present
-          // setState(() {
-          //   allCoordinatesPresent = value['allCoordinatesPresent'];
-          // });
           allCoordinatesPresent = value['allCoordinatesPresent'];
 
-// if the list is above 1 length then get 2 set of translated sequences
-// this will be in queue and be processed in the check movement isolate function
           if (tempPrevCurr.length > 1) {
             prevCoordinates = tempPrevCurr.elementAt(0);
             currentCoordinates = tempPrevCurr.elementAt(1);
@@ -317,7 +446,7 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
     try {
       if (restState == true && restingInitialized == false) {
         restingInitialized = true;
-        controller.restart(duration: 10);
+        _controller.restart(duration: 10);
 
         nowPerforming = false;
       }
@@ -339,13 +468,13 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
 // if detected then it will start countdown otherwise it will restart
           if (nowPerforming == false && restState == false) {
             if (countDowntoPerform == false) {
-              controller.start();
+              _controller.start();
               countDowntoPerform = true;
             }
           }
 
           // reststate countdown is done and resetting
-          if (controller.getTime().toString() == "10" &&
+          if (_controller.getTime().toString() == "10" &&
               nowPerforming == false &&
               restState == true) {
             nowPerforming = true;
@@ -353,7 +482,7 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
             restingInitialized = false;
           }
 
-          if (controller.getTime().toString() == "3" &&
+          if (_controller.getTime().toString() == "3" &&
               nowPerforming == false &&
               restState == false) {
             nowPerforming = true;
@@ -366,22 +495,30 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
 // checking if number of execution is achieved
 // if yes proceed to rest state
 // rest state will then count down to proceed with another set
-    if (inferenceCorrectCtr == numberOfExecution) {
-      setsAchieved = setsAchieved + 1;
-      nowPerforming = false;
-      inferenceCorrectCtr = 0;
-      restState = true;
+    if (setsReps[exerciseCtr][1] >= numberOfExecution) {
+      setState(() {
+        setsAchieved = setsReps[exerciseCtr][0];
+        setsAchieved = setsAchieved + 1;
+        setsReps[exerciseCtr][0] = setsAchieved;
+        nowPerforming = false;
+        inferenceCorrectCtr = 0;
+        restState = true;
+      });
 
 // if all the sets have been performed
-      if (setsAchieved == setsNeeded) {
-        isExerciseInit = false;
+      if (setsReps[exerciseCtr][0] >= setsNeeded) {
+        exerciseElapsedTime.add(_secondsElapsed);
+
+        _initNextExercse();
         exerciseCtr++;
 
         if (exerciseCtr < maxexercise) {
           // dialogBoxNotif(context, 3, "aasetsdaf");
-          ref.watch(showPreviewProvider.notifier).state = true;
+          isShowPreview = true;
         }
         setsAchieved = 0;
+      } else {
+        setsReps[exerciseCtr][1] = 0;
       }
     }
 
@@ -392,11 +529,10 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
             inferencingList.length >= tensorInputNeeded) {
           executionStateResult = 2;
 
-          inferencingData = {
+          var inferencingData = {
             'coordinatesData': inferencingList,
             'token': rootIsolateTokenInferencing,
           };
-          numExec++;
           queueInferencingData.add(inferencingData);
 
           if (inferencingList.length == tensorInputNeeded) {
@@ -414,9 +550,10 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
 
 // [ISOLATE FUNCTION] INFERENCING ==========================================================================================================================
     if (queueInferencingData.isNotEmpty && nowPerforming == true) {
-      inferencingCoordinatesData(queueInferencingData.elementAt(0), model)
+      inferencingCoordinatesDataV1(queueInferencingData.elementAt(0), model)
           .then((value) {
         inferenceValue = value[1];
+        print("inferencing -> $inferenceValue");
 
         if (inferenceBuffer.length == 2) {
           inferenceBuffer.removeAt(0);
@@ -425,31 +562,31 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
           inferenceBuffer.add(value[0]);
         }
         if (value[0] == true) {
-          if (ref.watch(showPreviewProvider) == false) {
+          if (isShowPreview == false) {
             if (inferenceBuffer.elementAt(0) == false &&
                 inferenceBuffer.elementAt(1) == true &&
                 nowPerforming == true) {
+              inferenceCorrectCtr = setsReps[exerciseCtr][1];
               inferenceCorrectCtr++;
-
+              setsReps[exerciseCtr][1] = inferenceCorrectCtr;
+              _secondsElapsedExercise = 0;
               showPreviewCtr = 0;
             }
           }
-          if (ref.watch(showPreviewProvider) == true) {
-            ref.watch(showPreviewProvider.notifier).state = false;
-            dialogBoxNotif(context, 2, "aasetsdaf");
-            showPreviewCtr = 0;
-          }
+          // if (isShowPreview == true) {
+          //   isShowPreview = false;
+          //   dialogBoxNotif(context, 2, "aasetsdaf");
+          //   showPreviewCtr = 0;
+          // }
         } else {
-          if (ref.watch(showPreviewProvider) == false) {
-            showPreviewCtr++;
-          }
+          // if (isShowPreview == false) {
+          //   showPreviewCtr++;
+          // }
 
-          if (showPreviewCtr == showPreviewCtrMax &&
-              ref.watch(showPreviewProvider) == false) {
-            dialogBoxNotif(context, 1, "aasetsdaf");
-
-            ref.watch(showPreviewProvider.notifier).state = true;
-          }
+          // if (showPreviewCtr == showPreviewCtrMax && isShowPreview == false) {
+          //   dialogBoxNotif(context, 1, "aasetsdaf");
+          //   isShowPreview = true;
+          // }
         }
         if (queueInferencingData.isNotEmpty) {
           queueInferencingData.removeAt(0);
@@ -462,13 +599,13 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
     if (inputImage.metadata?.size != null &&
         inputImage.metadata?.rotation != null) {
       final painter = PosePainter(
-          poses,
-          inputImage.metadata!.size,
-          inputImage.metadata!.rotation,
-          _cameraLensDirection,
-          executionStateResult,
-          //=========================================================================> NEEDS TO BE INITIALIZED FIRST FOR INFERENCING TO CHECK THE IGNORE COORDINATES
-          ref.read(ignoreCoordinatesProvider));
+        poses,
+        inputImage.metadata!.size,
+        inputImage.metadata!.rotation,
+        _cameraLensDirection,
+        executionStateResult,
+        ref.read(ignoreCoordinatesProvider),
+      );
       _customPaint = CustomPaint(painter: painter);
     } else {
       _text = 'Poses found: ${poses.length}\n\n';
@@ -479,148 +616,10 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
     if (mounted) {
       setState(() {});
     }
-  }
-
-  Widget noDisplay() {
-    return Container(
-      width: 0,
-      height: 0,
-      color: Colors.transparent,
-    );
-  }
-
-  Widget displayErrorPose(BuildContext context, double opacity) {
-    double screenWidth = MediaQuery.of(context).size.width;
-    return Icon(
-      Icons.accessibility_new_sharp,
-      color: secondaryColor.withOpacity(opacity),
-      size: screenWidth * 0.07,
-    );
-  }
-
-  Widget displayErrorPose2(BuildContext context, double opacity) {
-    double screenWidth = MediaQuery.of(context).size.width;
-    return Icon(
-      Icons.lightbulb_circle,
-      color: secondaryColor.withOpacity(opacity),
-      size: screenWidth * 0.07,
-    );
-  }
-
-  Widget buildContainerList(
-    int numofContainer,
-    int numofCompleted,
-    BuildContext context, {
-    double spaceModifier = .8,
-  }) {
-    double screenWidth = MediaQuery.of(context).size.width;
-    double screenHeight = MediaQuery.of(context).size.height;
-
-    List<Widget> containers = [];
-    int ctr = 0;
-
-    for (int i = 0; i < numofContainer; i++) {
-      ctr++;
-      if (ctr <= numofCompleted) {
-        containers.add(
-          Row(
-            children: [
-              containers.isNotEmpty
-                  ? SizedBox(
-                      width: ((screenWidth * spaceModifier) / numofContainer) *
-                          .10,
-                    )
-                  : Container(),
-              Container(
-                width: ((screenWidth * spaceModifier) / numofContainer) * .90,
-                height: (screenHeight * .010),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(screenWidth * 0.07),
-                  color: secondaryColor.withOpacity(0.8),
-                ),
-              ),
-            ],
-          ),
-        );
-      } else {
-        containers.add(
-          Row(
-            children: [
-              containers.isNotEmpty
-                  ? SizedBox(
-                      width: ((screenWidth * spaceModifier) / numofContainer) *
-                          .10,
-                    )
-                  : const SizedBox(
-                      width: 0,
-                    ),
-              Container(
-                width: ((screenWidth * spaceModifier) / numofContainer) * .90,
-                height: (screenHeight * .015),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(screenWidth * 0.07),
-                  color: tertiaryColor!.withOpacity(0.8),
-                ),
-              ),
-            ],
-          ),
-        );
-      }
+    if (exerciseCtr >= maxexercise && isInitNext == false) {
+      isInitNext = true;
+      _stopProcessAndNavigate();
     }
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: containers,
-    );
-  }
-
-  Widget timerCountDown(BuildContext context) {
-    double screenWidth = MediaQuery.of(context).size.width;
-    double screenHeight = MediaQuery.of(context).size.height;
-    double textSizeModif = (screenHeight + screenWidth) * textAdaptModifier;
-    return Align(
-        alignment: const Alignment(0.0, -0.2),
-        child: CircularCountDownTimer(
-          duration: currentDuration,
-          initialDuration: 0,
-          controller: controller,
-          width: MediaQuery.of(context).size.width / 1.5,
-          height: MediaQuery.of(context).size.height / 1.5,
-          ringColor: Colors.transparent,
-          ringGradient: null,
-          fillColor: Colors.white,
-          fillGradient: null,
-          backgroundColor: Colors.transparent,
-          backgroundGradient: null,
-          strokeWidth: screenWidth * .10,
-          strokeCap: StrokeCap.round,
-          textStyle: TextStyle(
-              fontSize: 50.0 * textSizeModif,
-              color: Colors.white,
-              fontWeight: FontWeight.bold),
-          textFormat: CountdownTextFormat.S,
-          isReverse: false,
-          isReverseAnimation: true,
-          isTimerTextShown: true,
-          autoStart: false,
-          onStart: () {},
-          onComplete: () {},
-          onChange: (String timeStamp) {},
-          timeFormatterFunction: (defaultFormatterFunction, duration) {
-            return Function.apply(defaultFormatterFunction, [duration]);
-          },
-        ));
-  }
-
-  Widget stopProcessAndNavigate() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => inferencingEnd(
-            workoutID: widget.workoutId, exercise: widget.exercise),
-      ),
-    );
-    return SizedBox();
   }
 
   @override
@@ -629,37 +628,13 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
   ) {
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
-    double textSizeModif = (screenHeight + screenWidth) * textAdaptModifier;
-    Widget displayCountdownTimer;
-    Widget displayError1;
-    Widget displayError2;
 
     // exercise details------------------------------------------------------------
-    initNextExercuse();
-
-    final luminanceValue = ref.watch(luminanceProvider);
-
-    if (nowPerforming == true) {
-      displayCountdownTimer = noDisplay();
-    } else {
-      displayCountdownTimer = timerCountDown(context);
-    }
-
-    if (allCoordinatesPresent == false) {
-      displayError1 = displayErrorPose(context, 1);
-    } else {
-      displayError1 = displayErrorPose(context, 0.0);
-    }
-
-    if (luminanceValue <= 50.0) {
-      displayError2 = displayErrorPose2(context, 1);
-    } else {
-      displayError2 = displayErrorPose2(context, 0.0);
-    }
+    // _initNextExercse();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (isEnd == true) {
-        isDoneNavigate();
+        _isDoneNavigate();
       }
     });
     return Scaffold(
@@ -668,254 +643,109 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
           Align(
             alignment: Alignment.topCenter,
             child: Container(
-              color: Colors.amber,
               width: screenWidth,
-              height: screenHeight * 1.5,
+              height: screenHeight,
+              child: DetectorView(
+                isCollecting: true,
+                title: 'Pose Detector',
+                customPaint: null,
+                text: _text,
+                onImage: _processImage,
+                initialCameraLensDirection: _cameraLensDirection,
+                onCameraLensDirectionChanged: (value) =>
+                    _cameraLensDirection = value,
+                onControllerInitialized: _handleControllerInitialized,
+              ),
             ),
           ),
 
+          // _cameraController != null
+          //     ? Align(
+          //         alignment: Alignment.topCenter,
+          //         child: Container(
+          //           width: screenWidth,
+          //           height: screenHeight,
+          //           child: Transform.scale(
+          //             scaleX: 1.39 * scaleX,
+          //             scaleY: 1.39 * scaleY,
+          //             alignment: Alignment.center,
+          //             child: CameraPreview(
+          //               _cameraController!,
+          //             ),
+          //           ),
+          //         ),
+          //       )
+          //     : SizedBox(),
+
           Center(
-            child: ref.watch(showPreviewProvider) == true
+            child: isShowPreview == true
                 ? Transform.scale(
                     scaleX: scale * 0.67,
                     scaleY: scale * 0.67,
                     alignment: Alignment.center,
                     child: AspectRatio(
-                      aspectRatio: _controller.value.aspectRatio,
-                      child: VideoPlayer(_controller),
+                      aspectRatio: videoController.value.aspectRatio,
+                      child: VideoPlayer(videoController),
                     ),
                   )
                 : const SizedBox(),
           ),
+          Align(
+            alignment: Alignment.topCenter,
+            child: SizedBox(
+              width: screenWidth,
+              height: screenHeight,
+              child: Transform.scale(
+                scaleX: 1.39 * scaleX,
+                scaleY: 1.39 * scaleY,
+                alignment: Alignment.center,
+                child: _customPaint ?? const Text(""),
+              ),
+            ),
+          ),
 
-          // Align(
-          //   alignment: Alignment.topCenter,
-          //   child: SizedBox(
-          //     width: screenWidth,
-          //     height: screenHeight,
-          //     child: DetectorView(
-          //       title: 'Pose Detector',
-          //       customPaint: _customPaint,
-          //       text: _text,
-          //       onImage: _processImage,
-          //       initialCameraLensDirection: _cameraLensDirection,
-          //       onCameraLensDirectionChanged: (value) =>
-          //           _cameraLensDirection = value,
-          //     ),
-          //   ),
-          // ),
-          setsNeeded != setsAchieved
-              ? Align(
-                  alignment: Alignment.topCenter,
-                  child: SizedBox(
-                    width: screenWidth,
-                    height: screenHeight,
-                    child: DetectorView(
-                      title: 'Pose Detector',
-                      // customPaint: _customPaint,
-                      text: _text,
-                      onImage: _processImage,
-                      initialCameraLensDirection: _cameraLensDirection,
-                    ),
-                  ),
+          InferencingBase(
+            onChangeExecise: onChangeExecise,
+            maxRep: numberOfExecution,
+            // currentRep: inferenceCorrectCtr,
+            currentRep: setsReps[exerciseCtr][1],
+            maxSets: setsNeeded,
+            currentSets: setsReps[exerciseCtr][0],
+            // currentSets: setsAchieved,
+            exerciseName: nameOfExercise,
+            maxExercise: maxexercise,
+            currentExerciseNum: exerciseCtr,
+            isAllCoordinatesPresent: true,
+            isNowPerforming: nowPerforming,
+          ),
+          restState == true
+              ? countDownTimer(
+                  isInference: true,
+                  controller: _controller,
+                  onChangeState: onChangeState,
                 )
-              : stopProcessAndNavigate(),
-
-// -----------------------------------------------------------------------------------------------------------[Current Exercise Description]
-
-          displayCountdownTimer,
-
-          Positioned(
-            bottom: screenHeight * 0.15,
-            child: SizedBox(
-              width: screenWidth,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                // crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  buildContainerList(
-                      widget.exercise.length, exerciseCtr, context,
-                      spaceModifier: 0.8),
-                ],
-              ),
-            ),
-          ),
-
-          Align(
-            alignment: const Alignment(0, .98),
-            child: Container(
-              width: screenWidth * 0.95,
-              height: screenHeight * 0.13,
-              decoration: BoxDecoration(
-                color: secondaryColor,
-                borderRadius: BorderRadius.circular(screenWidth * 0.05),
-              ),
-              child: Stack(children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(screenWidth * 0.05),
-                  child: LinearProgressIndicator(
-                    minHeight: screenHeight * 0.5,
-                    value: inferenceCorrectCtr / numberOfExecution,
-                    backgroundColor: mainColor.withOpacity(0.9),
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                        secondaryColor.withOpacity(0.5)),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(
-                      10.0), // Adjust the padding as needed
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            nameOfExercise,
-                            textAlign: TextAlign.start,
-                            style: TextStyle(
-                              fontSize: 28.0 * textSizeModif,
-                              fontWeight: FontWeight.w800,
-                              color: tertiaryColor,
-                            ),
-                          ),
-                          const Spacer(),
-                          GestureDetector(
-                            onTap: () {
-                              // Add the navigation logic or any action you want
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => ExerciseScreen(
-                                      exercise: widget.exercise[exerciseCtr]),
-                                ),
-                              );
-                            },
-                            child: const Padding(
-                              padding: EdgeInsets.all(12),
-                              child: Icon(
-                                Icons
-                                    .info, // Replace with your desired note icon
-                                color: Colors.black,
-                                size: 25,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          Text(
-                            "Reps:",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 19.0 * textSizeModif,
-                              fontWeight: FontWeight.w300,
-                              color: tertiaryColor,
-                            ),
-                          ),
-                          Text(
-                            "  $inferenceCorrectCtr / $numberOfExecution",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 19.0 * textSizeModif,
-                              fontWeight: FontWeight.w300,
-                              color: tertiaryColor,
-                            ),
-                          ),
-                          SizedBox(
-                            width: screenWidth * 0.1,
-                          ),
-                          Text(
-                            "Sets:",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 19.0 * textSizeModif,
-                              fontWeight: FontWeight.w300,
-                              color: tertiaryColor,
-                            ),
-                          ),
-                          Text(
-                            "  $setsAchieved / $setsNeeded",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 19.0 * textSizeModif,
-                              fontWeight: FontWeight.w300,
-                              color: tertiaryColor,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ]),
-            ),
-          ),
-
-          Align(
-            alignment: const Alignment(-1.0, 0.7),
-            child: IconButton(
-              icon: Icon(
-                Icons.arrow_back,
-                color: tertiaryColor,
-              ),
-              onPressed: () {
-                Navigator.pop(context);
-              },
-            ),
-          ),
-
-// -----------------------------------------------------------------------------------------------------------[Error Indicator Pose]
-          Positioned(
-            top: screenWidth * 0.1,
-            child: SizedBox(
-              width: screenWidth,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  displayError2,
-                  displayError1,
-                ],
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: screenWidth * 0.42,
-            left: 4,
-            child: SizedBox(
-              height: 450,
-              child: Row(
-                children: <Widget>[
-                  FAProgressBar(
-                    currentValue: inferenceValue * 100,
-                    size: 15,
-                    maxValue: 100,
-                    changeColorValue: 95,
-                    changeProgressColor: Colors.pink,
-                    backgroundColor: Colors.white.withOpacity(0.05),
-                    progressColor: Colors.lightBlue,
-                    animatedDuration: const Duration(milliseconds: 25),
-                    direction: Axis.vertical,
-                    verticalDirection: VerticalDirection.up,
-                    formatValueFixed: 2,
-                  )
-                ],
-              ),
-            ),
-          ),
+              : const SizedBox(),
           Center(
             child: ElevatedButton(
               onPressed: () {
                 inferenceCorrectCtr++;
+                setsReps[exerciseCtr][1] = inferenceCorrectCtr;
               },
               style: ElevatedButton.styleFrom(
-                fixedSize: Size(300, 5),
+                fixedSize: const Size(300, 5),
                 foregroundColor: Colors.white,
                 backgroundColor: tertiaryColor,
               ),
               child: const Text('Test execution'),
             ),
           ),
-// -----------------------------------------------------------------------------------------------------------[Progress Container]
+
+          // restState == true
+          //     ? countDownTimer(
+          //         controller: _controller,
+          //       )
+          //     : SizedBox(),
+// //-----------------------------------------------------------------------------------------------------------[Current Exercise Description]
         ],
       ),
     );

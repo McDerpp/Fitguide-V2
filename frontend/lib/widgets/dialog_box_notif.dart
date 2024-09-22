@@ -1,13 +1,6 @@
-import 'package:circular_countdown_timer/circular_countdown_timer.dart';
-
 import 'package:flutter/material.dart';
-
 import 'dart:async';
-import 'dart:math';
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:frontend/provider/main_settings.dart';
-
+import 'package:frontend/screens/inferencing/inferencing/mainUISettings.dart';
 import '../provider/data_collection_provider.dart';
 
 void dialogBoxNotif(
@@ -327,53 +320,4 @@ void dialogBoxNotif(
               : notifPerforming();
     },
   );
-
-  // showDialog(
-  //   barrierDismissible: false,
-  //   context: context,
-  //   builder: (context) {
-  //     Timer(Duration(seconds: 3), dismissDialog);
-  //     return AlertDialog(
-  //       backgroundColor: content[notifState][3],
-  //       // ----------------------------------------------------------------------------------------------------[STATE 1]
-
-  //       content: Container(
-  //         width: screenWidth * widthMultiplier,
-  //         height: screenHeight * heightMultiplier,
-  //         child: Padding(
-  //           padding:
-  //               EdgeInsets.all(16.0),
-  //           child: Column(
-  //             mainAxisAlignment: MainAxisAlignment.center,
-  //             children: [
-  //               Text(
-  //                 content[notifState][0],
-  //                 style: TextStyle(
-  //                   fontSize: 0.05 * screenWidth,
-  //                   fontWeight: FontWeight.w800,
-  //                   color: tertiaryColor,
-  //                 ),
-  //                 textAlign: TextAlign.center,
-  //               ),
-  //               Icon(
-  //                 content[notifState][2],
-  //                 size: screenWidth * 0.35,
-  //                 color: tertiaryColor,
-  //               ),
-  //               Text(
-  //                 content[notifState][1],
-  //                 style: TextStyle(
-  //                   fontSize: 0.05 * screenWidth,
-  //                   fontWeight: FontWeight.w800,
-  //                   color: tertiaryColor,
-  //                 ),
-  //                 textAlign: TextAlign.center,
-  //               ),
-  //             ],
-  //           ),
-  //         ),
-  //       ),
-  //     );
-  //   },
-  // );
 }

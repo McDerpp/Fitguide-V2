@@ -3,10 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/account.dart';
 import 'package:frontend/models/exercise.dart';
 import 'package:frontend/models/workout.dart';
-import 'package:frontend/provider/global_variable_provider.dart';
 import 'package:frontend/provider/main_settings.dart';
 import 'package:frontend/provider/provider.dart';
 import 'package:frontend/screens/inferencing/inferencing_seamless.dart';
+// import 'package:frontend/screens/inferencing/inferencing_seamless.dart';
 import 'package:frontend/screens/workout/create_workout_details.dart';
 import 'package:frontend/screens/workout/workout_data_management.dart';
 import 'package:frontend/services/history.dart';
@@ -32,6 +32,8 @@ class _workoutPageState extends ConsumerState<workoutPage> {
   List<Exercise> exerciseList = [];
   List<int> pickedExercise = [];
   late Workout workoutHere;
+  List<Exercise> exercises = [];
+  bool isPerformReady = false;
 
   late Future<List<Exercise>> _exercisesFuture;
 
@@ -85,7 +87,6 @@ class _workoutPageState extends ConsumerState<workoutPage> {
   @override
   void initState() {
     super.initState();
-    _exercisesFuture = WorkoutApiService.fetchExerciseWorkouts(widget.id);
     _loadData();
   }
 
@@ -320,7 +321,7 @@ class _workoutPageState extends ConsumerState<workoutPage> {
           } else if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
           } else if (snapshot.hasData) {
-            List<Exercise> exercises = snapshot.data!;
+            exercises = snapshot.data!;
             return Container(
               height: 500,
               child: SingleChildScrollView(
@@ -347,8 +348,6 @@ class _workoutPageState extends ConsumerState<workoutPage> {
 
   @override
   Widget build(BuildContext context) {
-    ref.watch(showPreviewProvider.notifier).state = true;
-
     return Scaffold(
       body: Stack(
         children: [
@@ -376,7 +375,9 @@ class _workoutPageState extends ConsumerState<workoutPage> {
                       context,
                       MaterialPageRoute(
                         builder: (context) => InferencingSeamless(
-                            workoutId: widget.id, exerciseList),
+                          workoutId: widget.id,
+                          exercise: exercises,
+                        ),
                       ),
                     );
                   },
@@ -389,7 +390,7 @@ class _workoutPageState extends ConsumerState<workoutPage> {
                 ),
               ],
             ),
-          ),
+          )
         ],
       ),
     );

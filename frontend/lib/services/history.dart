@@ -2,13 +2,13 @@ import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/account.dart';
-import 'package:frontend/models/workout.dart';
 import 'package:frontend/models/workoutsDone.dart';
 import 'package:frontend/provider/provider.dart';
+import 'package:frontend/services/mainAPI.dart';
 import 'package:http/http.dart' as http;
 
 class HistoryApiService {
-  static const String baseUrl = 'http://192.168.1.16:8000/api/history/';
+  static String baseUrl = '${api.baseUrl}/api/history/';
 
   static Future<void> addWorkoutFavorite({
     required WidgetRef ref,
@@ -91,7 +91,7 @@ class HistoryApiService {
     required int workoutsID,
     required WidgetRef ref,
   }) async {
-    final uri = Uri.parse('${baseUrl}addWorkoutsDone/$accountID/$workoutsID/');
+    final uri = Uri.parse('${baseUrl}addWorkoutsDone/$workoutsID/$accountID/');
 
     final response = await http.post(
       uri,

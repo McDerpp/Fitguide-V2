@@ -1,15 +1,14 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
+import 'package:frontend/screens/coreFunctionality/data_collection_provider.dart';
 import 'package:frontend/screens/coreFunctionality/globalVariables.dart';
-import 'package:frontend/screens/dataCollection/p2_txt_conversion.dart';
 import 'package:frontend/provider/main_settings.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:frontend/screens/coreFunctionality/pose_provider.dart';
+import 'package:frontend/screens/dataCollection/create_exercise/txt_conversion.dart';
 import 'hc_progressbar.dart';
 
 import 'package:frontend/provider/data_collection_provider.dart';
-
 
 class cwDataAnalysis extends ConsumerStatefulWidget {
   final double widthMultiplier;
@@ -70,7 +69,6 @@ class _cwDataAnalysisState extends ConsumerState<cwDataAnalysis> {
 
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
-    Color transparentColor = mainColor.withOpacity(alphaValue / 255.0);
     textSizeModifierSet = ref.watch(textSizeModifier);
     textSizeModifierSetIndividual = textSizeModifierSet["smallText"]!;
 
@@ -249,32 +247,30 @@ class _cwDataAnalysisState extends ConsumerState<cwDataAnalysis> {
                                             (index) => Row(
                                               children: [
                                                 executionResults(
-                                                    fontSize: screenWidth *
-                                                        textSizeModifierSet[
-                                                            'smallText']!,
-                                                    screenWidth: screenWidth,
-                                                    label: content[index][0][1],
-                                                    value: content[index][0][2],
-                                                    icon: content[index][0][0],
-                                                    modif: 0.5,
-                                                    colorResult: ref.watch(
-                                                        averageColorState)),
+                                                  fontSize: screenWidth *
+                                                      textSizeModifierSet[
+                                                          'smallText']!,
+                                                  screenWidth: screenWidth,
+                                                  label: content[index][0][1],
+                                                  value: content[index][0][2],
+                                                  icon: content[index][0][0],
+                                                  modif: 0.5,
+                                                ),
                                                 Expanded(
                                                   child: SizedBox(
                                                     height: 0.18,
                                                   ),
                                                 ),
                                                 executionResults(
-                                                    fontSize: screenWidth *
-                                                        textSizeModifierSet[
-                                                            'smallText']!,
-                                                    screenWidth: screenWidth,
-                                                    label: content[index][1][1],
-                                                    value: content[index][1][2],
-                                                    icon: content[index][1][0],
-                                                    modif: 0.5,
-                                                    colorResult: ref.watch(
-                                                        varianceColorState)),
+                                                  fontSize: screenWidth *
+                                                      textSizeModifierSet[
+                                                          'smallText']!,
+                                                  screenWidth: screenWidth,
+                                                  label: content[index][1][1],
+                                                  value: content[index][1][2],
+                                                  icon: content[index][1][0],
+                                                  modif: 0.5,
+                                                ),
                                               ],
                                             ),
                                           ),
@@ -366,7 +362,6 @@ class _cwDataAnalysisState extends ConsumerState<cwDataAnalysis> {
     required String label,
     required dynamic value,
     required dynamic icon,
-    required Color colorResult,
     dynamic modif = 1,
   }) {
     return Stack(

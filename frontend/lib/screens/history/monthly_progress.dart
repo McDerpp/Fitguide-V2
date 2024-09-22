@@ -44,7 +44,6 @@ class _MonthlyChartState extends State<MonthlyChart> {
     valueGraph = [];
     maxGraphValue = 0;
 
-    final startOfMonth = DateTime(focusedDay.year, focusedDay.month, 1);
     final endOfMonth = DateTime(focusedDay.year, focusedDay.month + 1, 0);
 
     // Initialize valueGraph with zeros

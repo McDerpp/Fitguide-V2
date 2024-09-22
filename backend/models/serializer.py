@@ -16,7 +16,7 @@ class DatasetSerializer(serializers.ModelSerializer):
 class ModelSerializer(serializers.ModelSerializer):
     class Meta:
         model = Model
-        fields = ['exercise', 'valLoss', 'valAccuracy']  # Exclude 'model' field here
+        fields = ['exercise', 'valLoss', 'valAccuracy']
 
     def create(self, validated_data):
         return Model.objects.create(**validated_data)

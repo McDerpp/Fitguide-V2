@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:frontend/models/dataset.dart';
 import 'package:frontend/models/model.dart';
+import 'package:frontend/services/mainAPI.dart';
 
 class Exercise {
   final int id;
@@ -49,7 +50,6 @@ class Exercise {
     required this.met,
   });
 
-  static const String baseUrl = "http://192.168.1.16:8000"; // Your base URL
 
   factory Exercise.fromJson(Map<String, dynamic> json) {
     return Exercise(
@@ -58,8 +58,8 @@ class Exercise {
       description: json['description'],
       intensity: json['intensity'],
       estimatedTime: json['estimated_time'],
-      imageUrl: '$baseUrl${json['image']}',
-      videoUrl: '$baseUrl${json['video']}',
+      imageUrl: '${api.baseUrl}${json['image']}',
+      videoUrl: '${api.baseUrl}${json['video']}',
       ignoreCoordinates: List<int>.from(jsonDecode(json['ignoreCoordinates'])),
       numExecution: json['numExecution'],
       numSet: json['numSet'],
