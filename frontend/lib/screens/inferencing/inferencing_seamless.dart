@@ -9,6 +9,7 @@ import 'package:frontend/models/exercise.dart';
 import 'package:frontend/provider/main_settings.dart';
 import 'package:frontend/screens/coreFunctionality/pose_provider.dart';
 import 'package:frontend/screens/dataCollection/create_exercise/data_collection_settings.dart';
+import 'package:frontend/screens/inferencing/inferencing_end.dart';
 import 'package:frontend/widgets/count_down.dart';
 import 'package:frontend/screens/inferencing/inferencing_base.dart';
 import 'package:tflite_flutter/tflite_flutter.dart' as tfl;
@@ -236,10 +237,10 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
       //     jsonDecode(widget.exercise[exerciseCtr].ignoreCoordinates);
       // List<int> ignoreList = List<int>.from(decodedList[0]);
       if (exerciseCtr < maxexercise) {
-        print("mode test -> ${widget.exercise[exerciseCtr].model.model}");
+        print("mode test -> ${widget.exercise[exerciseCtr].model!.model}");
         try {
           model = await _downloadFile(
-              '${widget.exercise[exerciseCtr].model.model}', 'temp_model');
+              '${widget.exercise[exerciseCtr].model!.model}', 'temp_model');
         } catch (error) {
           print("Error at download file -> $error");
         }
@@ -254,6 +255,8 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
         // ignoredCoordinates = ignoreList;
         setsNeeded = widget.exercise[exerciseCtr].numSet;
         numberOfExecution = widget.exercise[exerciseCtr].numExecution;
+        // setsNeeded = 2;
+        // numberOfExecution = 2;
       } else {}
     } catch (error) {
       print("error detected initializing ->$error");
@@ -264,18 +267,13 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
 
   void _isDoneNavigate() {
     videoController.dispose();
-
-    // Navigator.pushReplacement(
-    //   context,
-    //   MaterialPageRoute(
-    //     builder: (context) => inferencingEnd(
-    //       workout: widget.workout,
-    //       elapsedTime: _secondsElapsed,
-    //       exerciseElapsedTime: exerciseElapsedTime,
-    //       setsReps: setsReps,
-    //     ),
-    //   ),
-    // );
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => inferencingEnd(
+            exercise: widget.exercise, workoutID: widget.workoutId),
+      ),
+    );
   }
 
   void onChangeState(bool stateChange) {
@@ -294,17 +292,13 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
 
   void _stopProcessAndNavigate() {
     dispose();
-    // Navigator.push(
-    //   context,
-    //   MaterialPageRoute(
-    //     builder: (context) => inferencingEnd(
-    //       workout: widget.workout,
-    //       elapsedTime: _secondsElapsed,
-    //       exerciseElapsedTime: exerciseElapsedTime,
-    //       setsReps: setsReps,
-    //     ),
-    //   ),
-    // );
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => inferencingEnd(
+            exercise: widget.exercise, workoutID: widget.workoutId),
+      ),
+    );
   }
 
   void _initializeVideo(String video) {
@@ -351,17 +345,13 @@ class _InferencingSeamlessState extends ConsumerState<InferencingSeamless> {
       _navigated = true;
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Navigator.pushReplacement(
-      //   context,
-      //   MaterialPageRoute(
-      //     builder: (context) => inferencingEnd(
-      //       workout: widget.workout,
-      //       elapsedTime: _secondsElapsed,
-      //       exerciseElapsedTime: exerciseElapsedTime,
-      //       setsReps: setsReps,
-      //     ),
-      //   ),
-      // );
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => inferencingEnd(
+              exercise: widget.exercise, workoutID: widget.workoutId),
+        ),
+      );
     });
   }
 

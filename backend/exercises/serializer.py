@@ -2,6 +2,7 @@
 from rest_framework import serializers
 
 from accounts.serializers import AccountSerializer
+from models.models import TrainingProgress
 from history.models import FavoriteExercise
 from history.serializer import FavoriteWorkoutsSerializer
 from models.serializer import DatasetSerializer, GetModelSerializer, ModelSerializer
@@ -33,3 +34,8 @@ class AddExerciseSerializer(serializers.ModelSerializer):
         model = Exercise
         fields = '__all__'
 
+class TrainingProgressSerializer(serializers.ModelSerializer):
+    exercise = ExerciseSerializer( read_only = True)
+    class Meta:
+        model = TrainingProgress
+        fields = '__all__'

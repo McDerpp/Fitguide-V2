@@ -24,7 +24,6 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     initWorkout();
   }

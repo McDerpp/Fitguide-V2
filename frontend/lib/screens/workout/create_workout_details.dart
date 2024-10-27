@@ -8,7 +8,7 @@ import 'package:frontend/widgets/upload_image.dart';
 import 'package:frontend/screens/workout/create_workout_exercise.dart';
 import 'package:frontend/provider/main_settings.dart';
 
-import 'package:frontend/screens/workout/workout_data_management.dart';
+import 'package:frontend/provider/workout_data_management.dart';
 import 'package:frontend/screens/workout/workouts_library.dart';
 import 'package:frontend/services/workout.dart';
 import 'package:frontend/widgets/dialog_box.dart';
@@ -450,9 +450,9 @@ class _CreateWorkoutState extends ConsumerState<CreateWorkout> {
                               fontWeight: FontWeight.w400,
                             ),
                           ),
-                          UploadImage(
-                            isEdit: widget.isEdit,
-                          ),
+                          // UploadImage(
+                          //   isEdit: widget.isEdit,
+                          // ),
                         ],
                       ),
                     ),

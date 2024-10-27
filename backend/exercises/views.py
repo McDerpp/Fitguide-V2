@@ -1,18 +1,26 @@
+from __future__ import absolute_import, unicode_literals
+
 import os
 from django.shortcuts import render
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from models.models import Dataset, Model
+from models.models import Dataset, Model, TrainingProgress
 from modelTrainingProcess.mainTraining import trainModel
 from models.serializer import DatasetSerializer, ModelSerializer
 
 from .serializer import AddExerciseSerializer, ExerciseSerializer
 from .models import Exercise
+from .task import save_model
+from rest_framework.pagination import PageNumberPagination
+
+
 
 from django.core.files import File
 from django.conf import settings
+import json
+
 
 
 @api_view(['POST'])
@@ -33,12 +41,16 @@ def add(request):
                 "isPositive": True
             }
                 
+            print("positive_data->",positive_data)
 
             negative_data = {
                 "exercise": exerciseID,
                 "dataset": negative_dataset,
                 "isPositive": False
             }
+            print("negative_data->",negative_data)
+
+
 
             positive_serializer = DatasetSerializer(data=positive_data)
             negative_serializer = DatasetSerializer(data=negative_data)
@@ -54,20 +66,13 @@ def add(request):
                     positive_dataset_training = os.path.join('media', positive_dataset_training)
                     negative_dataset_training = os.path.join('media', negative_dataset_training)
 
-                    trained_model = trainModel(positive_dataset_training,negative_dataset_training)
-                    trained_model =trained_model.replace("media/","")
-                    file_path = os.path.join(settings.MEDIA_ROOT, trained_model)
 
-                    model_data = Model(
-                        exercise = exercise_serializer.instance,
-                        valLoss = 0,
-                        valAccuracy = 0,
-                    )
-                    with open(file_path, 'rb') as file:
-                        django_file = File(file)
-                        model_data.model.save(os.path.basename(file_path), django_file)
+
+                    result = save_model.delay(positive_dataset_training,negative_dataset_training,exerciseID)
+                   
                     
-                    model_data.save()
+                    TrainingProgress.objects.create(taskId=result.id, exercise=exercise_serializer.instance)
+                    print("test123142 -> ",result.id)
                       
                 else:
                     return Response(negative_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -75,8 +80,14 @@ def add(request):
                 return Response(positive_serializer.errors, status=status.HTTP_400_BAD_REQUEST)   
             final_serializer = ExerciseSerializer(exercise_serializer.instance,context={'account_id': exercise_serializer.instance.account.id})
             
-            return Response( final_serializer.data, status=status.HTTP_201_CREATED)
+            # return Response( final_serializer.data, status=status.HTTP_201_CREATED)
+            return Response( result.id, status=status.HTTP_201_CREATED)
+
         return Response(exercise_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
 
 
 
@@ -159,12 +170,16 @@ def edit(request,exercise_id):
         return Response(exercise_serializer.data, status=status.HTTP_201_CREATED)
         
 
-@api_view(['GET'])
-def getExerciseCard(request,account_id):
-    name = request.GET.get("name")
-    parts = request.GET.get("parts")
-    intensity = request.GET.get("intensity")
-    tag = request.GET.get("tag")
+
+
+@api_view(['POST'])
+def getExerciseCard(request, account_id):
+    name = request.data.get("name")
+    parts = request.data.get("parts")  # Assuming this might be a list (e.g., JSON or comma-separated)
+    intensity = request.data.get("intensity")
+    tag = request.data.get("tag")
+
+    print(f"parts -> {parts}")
 
     exercises = Exercise.objects.all()
 
@@ -172,7 +187,12 @@ def getExerciseCard(request,account_id):
         exercises = exercises.filter(name__icontains=name)
 
     if parts:
-        exercises = exercises.filter(parts=parts)
+        try:
+            parts_list = json.loads(parts)
+            print(f"Parsed parts list: {parts_list}")
+            exercises = exercises.filter(parts__contains=parts_list)
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid parts format"}, status=400)
 
     if intensity:
         exercises = exercises.filter(intensity=intensity)
@@ -180,17 +200,27 @@ def getExerciseCard(request,account_id):
     if tag:
         exercises = exercises.filter(tag=tag)
 
-    serializer = ExerciseSerializer(exercises,context={'account_id': account_id}, many=True)
-    
-        
-    return Response(serializer.data)
+    exercises = exercises.filter(is_active=True)
+
+    # Apply pagination
+    paginator = PageNumberPagination()
+    paginator.page_size = 10  # Number of items per page
+    paginated_exercises = paginator.paginate_queryset(exercises, request)
+
+    serializer = ExerciseSerializer(paginated_exercises, context={'account_id': account_id}, many=True)
+
+    return paginator.get_paginated_response(serializer.data)
+
+
 
 
 @api_view(['GET'])    
 def getExercise(request):
     if request.method == 'GET':        
         # id = request.data["id"]
-        exercises = Exercise.objects.all()
+        exercises = Exercise.objects.filter(is_active = True)
+        # exercises = Exercise.objects.all()
+
         serializer = ExerciseSerializer(exercises, many=True)
     return Response(serializer.data)
 
@@ -210,3 +240,28 @@ def deleteExercise(request,exercise_id):
     
     except Exercise.DoesNotExist:
         return Response({"detail": "Exercise not found."}, status=status.HTTP_404_NOT_FOUND)
+
+
+
+    
+@api_view(['DELETE'])
+def delete_all_exerccise(request):
+    try:
+        exercise_deleted, _ = Exercise.objects.all().delete() 
+        return Response({"message": f"Successfully deleted {exercise_deleted} tasks"}, status=status.HTTP_202_ACCEPTED)
+    except TrainingProgress.DoesNotExist:
+        return Response({"message": "No exercises available"}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['PUT'])
+def activate_exercise(request,exercise_id):
+    try:
+        exercise = Exercise.objects.get(id=exercise_id)
+        exercise.is_active = True
+        exercise.save()
+        trainingProgress = TrainingProgress.objects.get(exercise__id=exercise_id)
+        trainingProgress.delete()
+        
+        return Response({"message": f"Successfully activated exercise {exercise_id}"}, status=status.HTTP_202_ACCEPTED)
+    except TrainingProgress.DoesNotExist:
+        return Response({"message": "No exercises available"}, status=status.HTTP_404_NOT_FOUND)

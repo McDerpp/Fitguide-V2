@@ -4,10 +4,11 @@ import 'package:frontend/account.dart';
 import 'package:frontend/models/exercise.dart';
 import 'package:frontend/provider/provider.dart';
 import 'package:frontend/provider/main_settings.dart';
-import 'package:frontend/screens/exercise/create_exercise.dart';
+import 'package:frontend/screens/exercise/create_exercise/create_exercise.dart';
 import 'package:frontend/screens/exercise/exercise_data_management.dart';
-import 'package:frontend/screens/workout/workout_data_management.dart';
+import 'package:frontend/provider/workout_data_management.dart';
 import 'package:frontend/screens/exercise/exercise_card.dart';
+import 'package:frontend/services/exercise.dart';
 import 'package:frontend/widgets/deleteConfirmation.dart';
 import 'package:frontend/widgets/header.dart';
 import 'package:frontend/widgets/name_indicator.dart';
@@ -38,7 +39,13 @@ class _ExerciseLibraryState extends ConsumerState<ExerciseLibrary> {
   List<String> _workoutType = ['All', 'Custom', 'Premade', 'Four'];
   List<String> _favorite = ['All', 'Favorite', 'Non-Favorite'];
 
-// Should make a one file for this to be referred by others
+  String title = '';
+
+  List<Exercise> _exercisesList = [];
+  late Future<List<Exercise>> _exercisesFuture;
+
+  final PageController _pageController = PageController();
+
   final List<FilterCategory> filterCategories = [
     FilterCategory(
       title: 'Parts',
@@ -87,14 +94,16 @@ class _ExerciseLibraryState extends ConsumerState<ExerciseLibrary> {
     ),
   ];
 
-  String title = '';
-
-  List<Exercise> _exercisesFuture = [];
-  final PageController _pageController = PageController();
+  Future<void> initExercise() async {
+    _exercisesFuture = ExerciseApiService.fetchExercises();
+    _exercisesList = await _exercisesFuture;
+    setState(() {});
+  }
 
   @override
   void initState() {
     super.initState();
+    initExercise();
   }
 
   void createExercise() {
@@ -104,21 +113,21 @@ class _ExerciseLibraryState extends ConsumerState<ExerciseLibrary> {
     );
   }
 
-  void resetExercise() {
-    ref.read(videoPathProvider.notifier).state = null;
-    ref.read(videoThumbnailProvider.notifier).state = null;
-    ref.read(videoURLProvider.notifier).state = "";
+  // void resetExercise() {
+  //   ref.read(videoPathProvider.notifier).state = null;
+  //   ref.read(videoThumbnailProvider.notifier).state = null;
+  //   ref.read(videoURLProvider.notifier).state = "";
 
-    ref.read(image.notifier).state = null;
-    ref.read(thumbnailProvider.notifier).state = null;
-    ref.read(imageUrl.notifier).state = "";
+  //   ref.read(image.notifier).state = null;
+  //   ref.read(thumbnailProvider.notifier).state = null;
+  //   ref.read(imageUrl.notifier).state = "";
 
-    ref.read(exerciseNameProvider.notifier).state = "";
-    ref.read(repsProvider.notifier).state = "";
-    ref.read(setsProvider.notifier).state = "";
-    ref.read(exerciseDescription.notifier).state = "";
-    ref.read(exerciseIntensity.notifier).state = 'Easy';
-  }
+  //   ref.read(exerciseNameProvider.notifier).state = "";
+  //   ref.read(repsProvider.notifier).state = "";
+  //   ref.read(setsProvider.notifier).state = "";
+  //   ref.read(exerciseDescription.notifier).state = "";
+  //   ref.read(exerciseIntensity.notifier).state = 'Easy';
+  // }
 
   Widget filter() {
     return Container(
@@ -224,7 +233,7 @@ class _ExerciseLibraryState extends ConsumerState<ExerciseLibrary> {
                   GestureDetector(
                     onTap: () {
                       createExercise();
-                      resetExercise();
+                      // resetExercise();
                     },
                     child: Icon(
                       Icons.add_box_outlined,
@@ -292,7 +301,7 @@ class _ExerciseLibraryState extends ConsumerState<ExerciseLibrary> {
                       GestureDetector(
                         onTap: () {
                           createExercise();
-                          resetExercise();
+                          // resetExercise();
                         },
                         child: Icon(
                           Icons.add_box_outlined,
@@ -425,7 +434,7 @@ class _ExerciseLibraryState extends ConsumerState<ExerciseLibrary> {
           height: 500,
           child: SingleChildScrollView(
             child: Column(
-              children: _exercisesFuture.map(
+              children: _exercisesList.map(
                 (exercise) {
                   return Container(
                     width: MediaQuery.of(context).size.width * 0.90,
@@ -444,7 +453,7 @@ class _ExerciseLibraryState extends ConsumerState<ExerciseLibrary> {
           height: 500,
           child: SingleChildScrollView(
             child: Column(
-              children: _exercisesFuture.map(
+              children: _exercisesList.map(
                 (exercise) {
                   if (exercise.account.toString() == setup.id) {
                     return Container(
@@ -497,7 +506,7 @@ class _ExerciseLibraryState extends ConsumerState<ExerciseLibrary> {
       height: 500,
       child: SingleChildScrollView(
         child: Column(
-          children: _exercisesFuture.map(
+          children: _exercisesList.map(
             (exercise) {
               return Container(
                 width: MediaQuery.of(context).size.width * 0.90,
@@ -515,8 +524,6 @@ class _ExerciseLibraryState extends ConsumerState<ExerciseLibrary> {
 
   @override
   Widget build(BuildContext context) {
-    _exercisesFuture = ref.watch(exerciseFetchProvider);
-
     return Scaffold(
       backgroundColor: mainColor,
       drawer: const NavigationDrawerContent(),

@@ -32,27 +32,26 @@ class ExerciseNotifier extends StateNotifier<List<Exercise>> {
   void favoriteExercise(int exerciseId) {
     Exercise tempExercise = getIndividualExercisesByIds(exerciseId);
     Exercise updatedExercise = Exercise(
-      id: tempExercise.id,
-      name: tempExercise.name,
-      description: tempExercise.description,
-      intensity: tempExercise.intensity,
-      estimatedTime: tempExercise.estimatedTime,
-      imageUrl: tempExercise.imageUrl,
-      videoUrl: tempExercise.videoUrl,
-      ignoreCoordinates: tempExercise.ignoreCoordinates,
-      numExecution: tempExercise.numExecution,
-      numSet: tempExercise.numSet,
-      uploadedAt: tempExercise.uploadedAt,
-      isActive: tempExercise.isActive,
-      isCustom: tempExercise.isCustom,
-      parts: tempExercise.parts,
-      account: tempExercise.account,
-      datasets: tempExercise.datasets,
-      model: tempExercise.model,
-      madeBy: tempExercise.madeBy,
-      isFavorite:!tempExercise.isFavorite,
-      met:tempExercise.met.toString()
-    );
+        id: tempExercise.id,
+        name: tempExercise.name,
+        description: tempExercise.description,
+        intensity: tempExercise.intensity,
+        // estimatedTime: tempExercise.estimatedTime,
+        imageUrl: tempExercise.imageUrl,
+        videoUrl: tempExercise.videoUrl,
+        ignoreCoordinates: tempExercise.ignoreCoordinates,
+        numExecution: tempExercise.numExecution,
+        numSet: tempExercise.numSet,
+        uploadedAt: tempExercise.uploadedAt,
+        isActive: tempExercise.isActive,
+        isCustom: tempExercise.isCustom,
+        parts: tempExercise.parts,
+        account: tempExercise.account,
+        datasets: tempExercise.datasets,
+        model: tempExercise.model,
+        madeBy: tempExercise.madeBy,
+        isFavorite: !tempExercise.isFavorite,
+        met: tempExercise.met.toString());
     updateExercise(updatedExercise);
   }
 

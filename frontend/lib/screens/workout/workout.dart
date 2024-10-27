@@ -8,7 +8,7 @@ import 'package:frontend/provider/provider.dart';
 import 'package:frontend/screens/inferencing/inferencing_seamless.dart';
 // import 'package:frontend/screens/inferencing/inferencing_seamless.dart';
 import 'package:frontend/screens/workout/create_workout_details.dart';
-import 'package:frontend/screens/workout/workout_data_management.dart';
+import 'package:frontend/provider/workout_data_management.dart';
 import 'package:frontend/services/history.dart';
 import 'package:frontend/services/workout.dart';
 import 'package:frontend/screens/exercise/exercise_card.dart';

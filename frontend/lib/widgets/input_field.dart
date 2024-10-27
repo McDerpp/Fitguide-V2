@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:frontend/provider/main_settings.dart';
 
 class InputField extends StatelessWidget {
   String inputName;
@@ -34,10 +35,10 @@ class InputField extends StatelessWidget {
         ),
         Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: mainColor,
               border: Border.all(
                 color: Colors.white,
-                width: 2.0,
+                width: 1.0,
               ),
               borderRadius: BorderRadius.circular(10),
             ),

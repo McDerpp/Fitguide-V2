@@ -56,14 +56,17 @@ def deleteWorkout(request,workout_id):
 
 # for adding exercise for workout
 @api_view(['POST'])
-def addWorkoutExercise(request,workout_id,exercise_id):
+# def addWorkoutExercise(request,workout_id,exercise_id):
+def addWorkoutExercise(request):
     if request.method == 'POST':
-        exercise = Exercise.objects.get(id=int(exercise_id))
-        workout = Workout.objects.get(id=int(workout_id))
+        exercise = Exercise.objects.get(id=int(request.data["exercise_id"]))
+        workout = Workout.objects.get(id=int(request.data["workout_id"]))
         if exercise and workout:
             data = request.data.copy()
             data['exercise'] = exercise.id
             data['workout'] = workout.id
+            data['sets'] = workout.id
+            data['reps'] = workout.id
             serializer = WorkoutExerciseSerializer(data=data)
             print(request.data)
             if serializer.is_valid():

@@ -27,8 +27,15 @@ urlpatterns = [
 #          name='update_exercise'),
          
 # =======================================================================
-     path('addDataset/', views.addDataset,name='addDataset'),
-     path('trainModelRequest/<int:exercise_id>/', views.trainModelRequest,name='trainModelRequest')
+     path('addDataset/', views.addDataset,name='addDataset'),   
+     path('get_all_training/<int:account_id>/', views.get_all_training,name='get_all_training'),   
+     path('delete_individual_training/<int:id>/', views.delete_individual_training,name='delete_individual_training'),   
+     path('delete_all_training/', views.delete_all_training,name='delete_all_training'),   
+
+
+
+     
+     # path('trainModelRequest/<int:exercise_id>/', views.trainModelRequest,name='trainModelRequest')
 
 
 

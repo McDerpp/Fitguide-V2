@@ -5,14 +5,14 @@ Widget spaceLine(BuildContext context) {
   return Column(
     children: [
       SizedBox(
-        height: MediaQuery.of(context).size.height * 0.01,
+        height: MediaQuery.of(context).size.height * 0.02,
       ),
       Container(
           color: tertiaryColor,
           height: MediaQuery.of(context).size.height * 0.001,
           width: MediaQuery.of(context).size.width * 0.9),
       SizedBox(
-        height: MediaQuery.of(context).size.height * 0.01,
+        height: MediaQuery.of(context).size.height * 0.02,
       )
     ],
   );

@@ -20,25 +20,64 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
+
+
+TIME_ZONE = 'UTC'
+
+TIME_ZONE = 'Singapore'
+
+USE_TZ = True
+
 SECRET_KEY = "django-insecure-nxjm8ix#cp9a7pyfd15%ai7+krfbawlm(=$c=nxrje^wpx1nzx"
 CLIENT_ID = "123k8e52BKZe7c0unzk391GikxWomL7gKbkINDTcbWy"
 CLIENT_SECRET = "tAKbVFUpueyrk9dAZ7QD6vB9zI6kbUZAFcrnmV49jQ4eq70jVJYuztVddFJiloQ3NqoiH0RxHoiSYSbxs2xqvHXcVpCmqf4lMtDGHO6ImyAH2uQwLFnvffmYdNGcIFjz"
 
 
+# CELERY_BROKER_URL = 'redis://localhost:6379/0'
+# CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+
+CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
+CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/0'
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
+CELERYD_CONCURRENCY = 4  
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 
 
+# ASGI application
+ASGI_APPLICATION = "backend.asgi.application"
+
+
+# Redis setup for channel layers
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [("127.0.0.1", 6379)],  # Change this to your Redis configuration
+        },
+    },
+}
+
+
+
+
+
+
 # Application definition
 
 INSTALLED_APPS = [
+
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
+    'daphne',  
     "django.contrib.staticfiles",
     'rest_framework',
     'oauth2_provider',
@@ -48,6 +87,8 @@ INSTALLED_APPS = [
     "notifications",
     "history",
     "models",
+    'channels',
+
 ]
 
 
@@ -71,6 +112,8 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
     ],
+        'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10,  # Default number of items per page
 }
 
 
@@ -118,7 +161,8 @@ DATABASES = {
         'USER': 'root',  
         'PASSWORD': '1234', 
         'HOST': 'localhost',          
-        'PORT': '3306',               
+        'PORT': '3306',       
+        'ATOMIC_REQUESTS': True,        
     }
 }
 

@@ -92,7 +92,9 @@ final StateProvider<String> repsProvider = StateProvider((ref) => '');
 final StateProvider<String> setsProvider = StateProvider((ref) => '');
 final StateProvider<String> exerciseDescription = StateProvider((ref) => '');
 final StateProvider<String> exerciseIntensity = StateProvider((ref) => 'Easy');
-final StateProvider<String> exercisePart = StateProvider((ref) => 'Neck');
+
+final StateProvider<List<String>> exercisePart = StateProvider((ref) => []);
+
 final StateProvider<String> metProvider = StateProvider((ref) => '');
 final StateProvider<String> estimatedTimeProvider = StateProvider((ref) => '');
 final StateProvider<File?> videoPathProvider = StateProvider((ref) => null);

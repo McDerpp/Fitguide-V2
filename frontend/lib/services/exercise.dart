@@ -4,11 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/services/mainAPI.dart';
 import 'package:http/http.dart' as http;
 import 'package:frontend/provider/provider.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../models/exercise.dart';
 
 class ExerciseApiService {
-  static  String baseUrl = '${api.baseUrl}/api/exercises/';
+  static String baseUrl = '${api.baseUrl}/api/exercises/';
 
   static Future<List<Exercise>> fetchExercises() async {
     final response =
@@ -31,9 +32,9 @@ class ExerciseApiService {
     required String description,
     required String sets,
     required String reps,
-    required String positiveNum,
-    required String negativeNum,
-    required String part,
+    // required String positiveNum,
+    // required String negativeNum,
+    required List<String> part,
     required String estimatedTime,
     required String MET,
     required WidgetRef ref,
@@ -48,9 +49,9 @@ class ExerciseApiService {
       ..fields['name'] = name
       ..fields['intensity'] = intensity
       ..fields['description'] = description
-      ..fields['positiveNum'] = positiveNum
-      ..fields['negativeNum'] = negativeNum
-      ..fields['parts'] = part
+      // ..fields['positiveNum'] = positiveNum
+      // ..fields['negativeNum'] = negativeNum
+      ..fields['parts'] = jsonEncode(part)
       ..fields['numExecution'] = reps
       ..fields['numExecution'] = reps
       ..fields['numExecution'] = reps
@@ -81,14 +82,33 @@ class ExerciseApiService {
 
     if (response.statusCode == 201) {
       final jsonResponse = jsonDecode(responseData);
-      ref
-          .read(exerciseFetchProvider.notifier)
-          .addExercise(Exercise.fromJson(jsonResponse));
+      // ref
+      //     .read(exerciseFetchProvider.notifier)
+      //     .addExercise(Exercise.fromJson(jsonResponse));
+      print("jsonResponse-->$jsonResponse");
+      String taskId = jsonResponse;
+      monitorTaskProgress(taskId);
 
       return Exercise.fromJson(jsonResponse);
     } else {
       throw Exception('Failed to create Workout');
     }
+  }
+
+  static void monitorTaskProgress(String taskId) {
+    final channel = WebSocketChannel.connect(
+      Uri.parse(
+          'ws://192.168.1.16:8001/ws/task-status/$taskId/'), // Correct URL
+    );
+
+    channel.stream.listen((message) {
+      final data = jsonDecode(message);
+      final status = data['status'];
+      final currentStep = data['current_step'] ?? 'Unknown step';
+      print('Task Status: $status, Current Step: $currentStep');
+    }, onError: (error) {
+      print('Error: $error');
+    });
   }
 
   static Future<Exercise> editExercise({
@@ -188,6 +208,19 @@ class ExerciseApiService {
 
     if (response.statusCode == 204) {
       ref.read(exerciseFetchProvider.notifier).favoriteExercise(exerciseID);
+    } else {
+      throw Exception('Failed to load exercise');
+    }
+  }
+
+  static Future<void> activateExercise(String exerciseId) async {
+    final uri = Uri.parse('${baseUrl}activate_exercise/$exerciseId/');
+
+    final response = await http.put(
+      uri,
+    );
+
+    if (response.statusCode == 200) {
     } else {
       throw Exception('Failed to load exercise');
     }

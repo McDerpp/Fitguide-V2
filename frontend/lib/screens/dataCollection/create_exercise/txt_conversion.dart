@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/screens/coreFunctionality/data_collection_provider.dart';
-import 'package:frontend/screens/exercise/create_exercise.dart';
+import 'package:frontend/screens/exercise/create_exercise/create_exercise.dart';
 import 'package:frontend/screens/inferencing/inferencing/mainUISettings.dart';
 import 'package:frontend/widgets/custom_button.dart';
 import 'package:image_picker/image_picker.dart';
@@ -14,24 +14,24 @@ import 'package:path_provider/path_provider.dart';
 import 'dart:async';
 import 'dart:math';
 
-class collectionDataP1 extends ConsumerStatefulWidget {
+class generateTxtFile extends ConsumerStatefulWidget {
   final List<List<List<double>>> correctDataset;
   final List<List<List<double>>> incorretcDataset;
-  final bool isRetraining;
-  final bool isNewRetrain;
 
-  const collectionDataP1(
-      {super.key,
-      required this.correctDataset,
-      required this.incorretcDataset,
-      this.isRetraining = false,
-      this.isNewRetrain = false});
+  bool isGenerated;
+
+  generateTxtFile({
+    super.key,
+    required this.correctDataset,
+    required this.incorretcDataset,
+    required this.isGenerated,
+  });
 
   @override
-  ConsumerState<collectionDataP1> createState() => _collectionDataP1State();
+  ConsumerState<generateTxtFile> createState() => _generateTxtFileState();
 }
 
-class _collectionDataP1State extends ConsumerState<collectionDataP1> {
+class _generateTxtFileState extends ConsumerState<generateTxtFile> {
   late int progress;
   double progressT = 0;
   int progressCtr = 0;
@@ -77,7 +77,6 @@ class _collectionDataP1State extends ConsumerState<collectionDataP1> {
     List<dynamic> dataCollected,
     bool isCorrectDataset,
   ) async {
-    print("translating now123123");
     Directory externalDir = await getApplicationDocumentsDirectory();
     String externalPath = externalDir.path;
 
@@ -152,12 +151,14 @@ class _collectionDataP1State extends ConsumerState<collectionDataP1> {
         progress = ctr;
       });
       await Future.delayed(
-          const Duration(milliseconds: 100)); // Add a delay of 100 milliseconds
+          const Duration(milliseconds: 100)); 
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    print("txt conversion1 ->${widget.isGenerated}");
+    
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
 
@@ -175,62 +176,31 @@ class _collectionDataP1State extends ConsumerState<collectionDataP1> {
 
     progressT == 1 ? progressCtr++ : null;
 
-    return Scaffold(
-      body: Stack(
+    return Container(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Container(
-            height: screenHeight,
-            width: screenWidth,
-            color: mainColorState,
-          ),
-          Positioned(
-            bottom: screenHeight *
-                0.05, // Adjust as needed, considering padding/margin
-            left: 0,
-            right: 0,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Center(
-                  child: SizedBox(
-                    width: screenWidth * 0.75,
-                    child: Text(seriousFacts[seriousFactsRandIndex],
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: textSizeModif["smallText2"]! * screenWidth,
-                          color: tertiaryColorState,
-                        )),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                progressCtr != 2
-                    ? SizedBox(
-                        width: screenWidth * 0.85,
-                        height: screenHeight * 0.05, // Specify a fixed width
-                        child: LinearProgressIndicator(
-                          minHeight: 20,
-                          backgroundColor: Colors.grey[300],
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                              secondaryColorState),
-                          value: progressT,
-                        ))
-                    : Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          buildElevatedButton(
-                            context: context,
-                            label: "Next",
-                            colorSet: colorSet,
-                            textSizeModifierIndividual:
-                                textSizeModif['smallText2']!,
-                            func: () {
-                              navigateDone();
-                            },
-                          ),
-                        ],
-                      )
-              ],
+          // Center(
+          //   child: SizedBox(
+          //     width: screenWidth * 0.75,
+          //     child: Text(seriousFacts[seriousFactsRandIndex],
+          //         textAlign: TextAlign.center,
+          //         style: TextStyle(
+          //           fontSize: textSizeModif["smallText2"]! * screenWidth,
+          //           color: Colors.white,
+          //         )),
+          //   ),
+          // ),
+          Center(
+            child: SizedBox(
+              width: screenWidth * 0.65,
+              height: screenHeight * 0.01,
+              child: LinearProgressIndicator(
+                minHeight: 20,
+                backgroundColor: Colors.grey[300],
+                valueColor: AlwaysStoppedAnimation<Color>(secondaryColorState),
+                value: progressT,
+              ),
             ),
           )
         ],

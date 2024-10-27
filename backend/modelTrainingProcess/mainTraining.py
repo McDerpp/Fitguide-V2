@@ -1,12 +1,10 @@
 
 from pathlib import Path
 # from backend.models.models import Model
-from models.models import Model
+from models.models import Model, TrainingProgress
 
 import os
 os.environ["TF_USE_LEGACY_KERAS"] = "1"
-
-
 
 
 
@@ -33,9 +31,17 @@ from collections import Counter
 import random as rand
 from django.contrib.sessions.backends.db import SessionStore
 
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+
+optuna_Trial = 4
 
 
-def trainModel(positiveDataPath, negativeDataPath,  dataset_info=None, model_info=None):
+
+
+
+
+def trainModel(self,positiveDataPath, negativeDataPath,  dataset_info=None, model_info=None):
     best_model = ""
     y_train = []
     X_train = []
@@ -78,7 +84,32 @@ def trainModel(positiveDataPath, negativeDataPath,  dataset_info=None, model_inf
 
     def create_lstm_model(trial):
         nonlocal X_train
+
+        update = TrainingProgress.objects.filter(taskId=self.request.id)
+        # if(trial.number==0):
+        channel_layer = get_channel_layer()
+        task_id = self.request.id
+
+                
+        print("optuna_Trial->",optuna_Trial)
+        print("trial.number->",trial.number + 1)
+        result = ((trial.number + 1)/optuna_Trial)
+
+        print("result->",result)
+
+        async_to_sync(channel_layer.group_send)(
+            f"task_{task_id}",
+            {
+                'type': 'send_task_status', 
+                'status': f'{result * 100}'
+
+            }
+        )
+        print(f"Sent message to task_{task_id} with progress: {result}%")
+
+
         model = Sequential()
+
         custom_early_stopping = EarlyStopping(
             monitor='val_loss', patience=15, restore_best_weights=True)
         lr_reduction_callback = ReduceLROnPlateau(
@@ -120,6 +151,7 @@ def trainModel(positiveDataPath, negativeDataPath,  dataset_info=None, model_inf
         # Compile the model
         model.compile(optimizer='adam', loss='binary_crossentropy',
                       metrics=['accuracy'])
+
 
         return model
 
@@ -215,6 +247,8 @@ def trainModel(positiveDataPath, negativeDataPath,  dataset_info=None, model_inf
 
         nonlocal setModelInfo
 
+        global optuna_Trial
+
         best_val_loss = 0.0
         best_val_accuracy = 0.0
         correctDataAugmentation_final = []
@@ -256,7 +290,7 @@ def trainModel(positiveDataPath, negativeDataPath,  dataset_info=None, model_inf
         # Optimize hyperparameters and architecture
         study = optuna.create_study(direction='maximize')
         # study.optimize(objective, n_trials=25)
-        study.optimize(objective, n_trials=2)
+        study.optimize(objective, n_trials=optuna_Trial)
 
         # Print the best hyperparameters and architecture
         best_trial = study.best_trial
@@ -311,6 +345,11 @@ def trainModel(positiveDataPath, negativeDataPath,  dataset_info=None, model_inf
 
     # return setModelInfo
     print("best_model_tflite_test--->",best_model_tflite)
+
+    update = TrainingProgress.objects.filter(taskId=self.request.id)
+    update.update(status="COMPLETED")
+
+
     return best_model_tflite
 
 

@@ -3,6 +3,7 @@ import 'package:frontend/screens/history/calendar.dart';
 import 'package:frontend/screens/exercise/exercises_library.dart';
 import 'package:frontend/screens/home/home.dart';
 import 'package:frontend/screens/login.dart';
+import 'package:frontend/screens/modelTraining/model_library.dart';
 import 'package:frontend/screens/notification_library.dart';
 import 'package:frontend/screens/profile.dart';
 import 'package:frontend/screens/workout/workouts_library.dart';
@@ -146,12 +147,19 @@ class NavigationDrawerContent extends StatelessWidget {
                     Icons.music_note_outlined),
                 Spacer(),
                 nav(
-                    "Fit-Creator Program",
+                    "Model Progress",
                     navigate(
                       context,
-                      const LoginPage(),
+                      ModelProgress(),
                     ),
                     Icons.accessibility_new),
+                // nav(
+                //     "Fit-Creator Program",
+                //     navigate(
+                //       context,
+                //       const LoginPage(),
+                //     ),
+                //     Icons.accessibility_new),
                 nav(
                     "Log Update",
                     navigate(
