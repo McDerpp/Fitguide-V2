@@ -19,6 +19,7 @@ class ExerciseCard extends ConsumerStatefulWidget {
   final bool isPicked;
   final void Function(ExercisePlan, bool, int)? onChangeExericiseList;
   final void Function()? onChangePick;
+  final List<ExercisePlan>? pickedExercise;
 
   //setting up sets and reps mode
   final bool isSetsRepsMode;
@@ -26,7 +27,7 @@ class ExerciseCard extends ConsumerStatefulWidget {
   final int reps;
   final int position;
   final int restDuration;
-  final void Function(Exercise, int, int)? onChangeSetsReps;
+  final void Function(int, int, int, int)? onChangeSetsRepsRest;
 
   // training mode
   final double progress;
@@ -39,8 +40,9 @@ class ExerciseCard extends ConsumerStatefulWidget {
     this.isPickExerciseMode = false,
     this.isSetsRepsMode = false,
     this.onChangeExericiseList,
-    this.onChangeSetsReps,
+    this.onChangeSetsRepsRest,
     this.onChangePick,
+    this.pickedExercise,
     this.restDuration = 60,
     this.isPicked = false,
     this.position = 0,
@@ -125,7 +127,18 @@ class _ExerciseCardState extends ConsumerState<ExerciseCard> {
     }
   }
 
+// in this mode user is currently picking exercise to add to the workout
   Widget pickExercise() {
+    int pickedCtr = 0;
+    if (widget.isPicked) {
+      for (ExercisePlan exercise in widget.pickedExercise!) {
+        print("checking!?");
+        if (exercise.exercise == widget.exercise) {
+          pickedCtr++;
+        }
+      }
+    }
+
     return Column(
       children: [
         base(),
@@ -134,22 +147,42 @@ class _ExerciseCardState extends ConsumerState<ExerciseCard> {
         ),
         GestureDetector(
           child: Container(
-            decoration: BoxDecoration(
-              // color: tertiaryColor,
-              color: !widget.isPicked ? tertiaryColor : Colors.amber,
+              decoration: BoxDecoration(
+                // color: tertiaryColor,
+                color: !widget.isPicked ? tertiaryColor : Colors.amber,
 
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(10),
-                bottomRight: Radius.circular(10),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(10),
+                  bottomRight: Radius.circular(10),
+                ),
               ),
-            ),
-            width: MediaQuery.of(context).size.width * .90,
-            height: MediaQuery.of(context).size.width * .07,
-            child: Icon(
-              Icons.add,
-              color: Colors.white,
-            ),
-          ),
+              width: MediaQuery.of(context).size.width * .90,
+              height: MediaQuery.of(context).size.width * .07,
+              child: Stack(
+                children: [
+                  Center(
+                    child: Icon(
+                      Icons.add,
+                      color: Colors.white,
+                    ),
+                  ),
+                  widget.isPicked
+                      ? Row(
+                          children: [
+                            SizedBox(
+                              width: 10,
+                            ),
+                            Text(
+                              "Current : $pickedCtr",
+                              style: TextStyle(
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        )
+                      : SizedBox(),
+                ],
+              )),
           onTap: () {
             setState(() {
               widget.onChangeExericiseList!(
@@ -157,7 +190,7 @@ class _ExerciseCardState extends ConsumerState<ExerciseCard> {
                     exercise: widget.exercise,
                     sets: widget.reps,
                     reps: widget.sets,
-                    restDuration: 60,
+                    restDuration: 30,
                   ),
                   true,
                   0);
@@ -172,6 +205,7 @@ class _ExerciseCardState extends ConsumerState<ExerciseCard> {
     );
   }
 
+// in this mode, user can define amount of sets, reps and rest of the exercise added to the workout
   Widget setsRepsMode() {
     // this is from current exercise
     Widget sets() {
@@ -221,8 +255,12 @@ class _ExerciseCardState extends ConsumerState<ExerciseCard> {
                     child: Icon(Icons.remove, color: Colors.white),
                   ),
                   onTap: () {
-                    widget.onChangeSetsReps!(widget.exercise,
-                        widget.sets != 0 ? widget.sets - 1 : 0, widget.reps);
+                    widget.onChangeSetsRepsRest!(
+                      widget.sets != 0 ? widget.sets - 1 : 0,
+                      widget.reps,
+                      widget.restDuration,
+                      widget.position,
+                    );
                   },
                 ),
                 Container(
@@ -251,15 +289,18 @@ class _ExerciseCardState extends ConsumerState<ExerciseCard> {
                       width: 28,
                       child: Icon(Icons.add, color: Colors.white)),
                   onTap: () {
-                    widget.onChangeSetsReps!(
-                        widget.exercise, widget.sets + 1, widget.reps);
+                    widget.onChangeSetsRepsRest!(
+                      widget.sets + 1,
+                      widget.reps,
+                      widget.restDuration,
+                      widget.position,
+                    );
                   },
                 ),
 
-                SizedBox(
-                  width: 25,
-                ),
-// reps
+                Spacer(),
+
+// REPS----------------------------------------------------------------------------------------
                 GestureDetector(
                   child: Container(
                     height: 28,
@@ -267,8 +308,12 @@ class _ExerciseCardState extends ConsumerState<ExerciseCard> {
                     child: Icon(Icons.remove, color: Colors.white),
                   ),
                   onTap: () {
-                    widget.onChangeSetsReps!(widget.exercise, widget.sets,
-                        widget.reps != 0 ? widget.reps - 1 : 0);
+                    widget.onChangeSetsRepsRest!(
+                      widget.sets,
+                      widget.reps != 0 ? widget.reps - 1 : 0,
+                      widget.restDuration,
+                      widget.position,
+                    );
                   },
                 ),
                 Container(
@@ -298,32 +343,67 @@ class _ExerciseCardState extends ConsumerState<ExerciseCard> {
                     child: Icon(Icons.add, color: Colors.white),
                   ),
                   onTap: () {
-                    widget.onChangeSetsReps!(
-                        widget.exercise, widget.sets, widget.reps + 1);
+                    widget.onChangeSetsRepsRest!(
+                      widget.sets,
+                      widget.reps + 1,
+                      widget.restDuration,
+                      widget.position,
+                    );
                   },
                 ),
                 Spacer(),
+// REST----------------------------------------------------------------------------------------
+
                 GestureDetector(
-                  onTap: () {
-                    widget.onChangeExericiseList!(
-                      ExercisePlan(
-                        exercise: widget.exercise,
-                        sets: widget.reps,
-                        reps: widget.sets,
-                        restDuration: 60,
-                      ),
-                      false,
-                      widget.position,
-                    );
-                    widget.onChangePick!();
-                  },
                   child: Container(
                     height: 28,
                     width: 28,
-                    child: Icon(Icons.highlight_remove_rounded,
-                        color: Colors.white),
+                    child: Icon(Icons.remove, color: Colors.white),
                   ),
+                  onTap: () {
+                    widget.onChangeSetsRepsRest!(
+                      widget.sets,
+                      widget.reps,
+                      widget.restDuration - 5,
+                      widget.position,
+                    );
+                  },
                 ),
+                Container(
+                    height: 50,
+                    width: 40,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w200,
+                          ),
+                          'Rest',
+                        ),
+                        Text(
+                          style: TextStyle(color: Colors.white),
+                          widget.restDuration.toString() + "s",
+                        ),
+                      ],
+                    )),
+                GestureDetector(
+                  child: Container(
+                    height: 28,
+                    width: 28,
+                    child: Icon(Icons.add, color: Colors.white),
+                  ),
+                  onTap: () {
+                    widget.onChangeSetsRepsRest!(
+                      widget.sets,
+                      widget.reps,
+                      widget.restDuration + 5,
+                      widget.position,
+                    );
+                  },
+                )
               ],
             ),
           ),
@@ -467,30 +547,61 @@ class _ExerciseCardState extends ConsumerState<ExerciseCard> {
                             : Positioned(
                                 top: 0,
                                 right: 0,
-                                child: GestureDetector(
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(5),
-                                    child: Icon(
-                                      widget.exercise.isFavorite == false
-                                          ? Icons.favorite_border
-                                          : Icons.favorite,
-                                      color: secondaryColor,
-                                      size: 25.0,
-                                    ),
-                                  ),
-                                  onTap: () {
-                                    widget.exercise.isFavorite == false
-                                        ? HistoryApiService.addExerciseFavorite(
-                                            ref: ref,
-                                            accountID: int.parse(setup.id),
-                                            exerciseID: widget.exercise.id)
-                                        : HistoryApiService
-                                            .deleteExerciseFavorite(
-                                                ref: ref,
-                                                accountID: int.parse(setup.id),
-                                                exerciseID: widget.exercise.id);
-                                  },
-                                ),
+                                child: !widget.isSetsRepsMode
+// like button for every mode beside isSetRepMode
+                                    ? GestureDetector(
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(5),
+                                          child: Icon(
+                                            widget.exercise.isFavorite == false
+                                                ? Icons.favorite_border
+                                                : Icons.favorite,
+                                            color: secondaryColor,
+                                            size: 25.0,
+                                          ),
+                                        ),
+                                        onTap: () {
+                                          widget.exercise.isFavorite == false
+                                              ? HistoryApiService
+                                                  .addExerciseFavorite(
+                                                      ref: ref,
+                                                      accountID:
+                                                          int.parse(setup.id),
+                                                      exerciseID:
+                                                          widget.exercise.id)
+                                              : HistoryApiService
+                                                  .deleteExerciseFavorite(
+                                                      ref: ref,
+                                                      accountID:
+                                                          int.parse(setup.id),
+                                                      exerciseID:
+                                                          widget.exercise.id);
+                                        },
+                                      )
+// for updating sets and reps, like is replaced with remove to save space for sets,reps and rest
+                                    : GestureDetector(
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(5),
+                                          child: Icon(
+                                            Icons.highlight_remove_sharp,
+                                            color: secondaryColor,
+                                            size: 25.0,
+                                          ),
+                                        ),
+                                        onTap: () {
+                                          widget.onChangeExericiseList!(
+                                              ExercisePlan(
+                                                exercise: widget.exercise,
+                                                sets: widget.sets,
+                                                reps: widget.reps,
+                                                restDuration:
+                                                    widget.restDuration,
+                                              ),
+                                              false,
+                                              widget.position);
+                                          widget.onChangePick!();
+                                        },
+                                      ),
                               ),
                       ],
                     ),

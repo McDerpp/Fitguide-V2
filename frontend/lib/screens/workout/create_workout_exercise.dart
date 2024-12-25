@@ -150,19 +150,19 @@ class _PickExerciseState extends ConsumerState<PickExercise> {
     setState(() {});
   }
 
-  void updateSetsAndReps(Exercise targetExercise, int newSets, int newReps) {
-    for (ExercisePlan exercise in widget.pickedExercise) {
-      if (exercise.exercise.id == targetExercise.id) {
-        print("UPDATING!");
-        exercise.sets = newSets;
-        exercise.reps = newReps;
-        setState(() {});
-        print(
-            "picked exercise sets --> ${widget.pickedExercise.elementAt(0).sets}");
-        print(
-            "picked exercise reps --> ${widget.pickedExercise.elementAt(0).reps}");
-      }
-    }
+  void updateSetsRepsRest(
+    int newSets,
+    int newReps,
+    int newRest,
+    int position,
+  ) {
+    print("UPDATING [$position] SETS REPS");
+    widget.pickedExercise.elementAt(position).reps = newReps;
+    widget.pickedExercise.elementAt(position).sets = newSets;
+    widget.pickedExercise.elementAt(position).restDuration = newRest;
+
+    positionCtr = 0;
+    setState(() {});
   }
 
   void updateExercisePosition() {}
@@ -468,6 +468,7 @@ class _PickExerciseState extends ConsumerState<PickExercise> {
                             children: _exercisesFuture.map(
                               (exercise) {
                                 return ExerciseCard(
+                                  pickedExercise: widget.pickedExercise,
                                   onChangeExericiseList:
                                       widget.onChangeExericiseList,
                                   exercise: exercise,
@@ -497,8 +498,9 @@ class _PickExerciseState extends ConsumerState<PickExercise> {
                                   exercise: exercise.exercise,
                                   sets: exercise.sets,
                                   reps: exercise.reps,
+                                  restDuration: exercise.restDuration,
                                   position: positionCtr - 1,
-                                  onChangeSetsReps: updateSetsAndReps,
+                                  onChangeSetsRepsRest: updateSetsRepsRest,
                                   onChangePick: onChangePick,
                                 );
                               },
