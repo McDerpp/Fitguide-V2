@@ -89,6 +89,7 @@ dependencies:
   confetti: ^0.7.0
   auto_size_text: ^3.0.0
   web_socket_channel: ^2.1.0
+  number_paginator: ^0.4.1
 
 dev_dependencies:
   flutter_test:

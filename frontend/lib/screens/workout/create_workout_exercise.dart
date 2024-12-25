@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/models/exercise.dart';
+import 'package:frontend/models/exercisePlan.dart';
 import 'package:frontend/provider/provider.dart';
 import 'package:frontend/provider/workout_data_management.dart';
 import 'package:frontend/screens/workout/create_workout_details.dart';
@@ -9,19 +12,26 @@ import 'package:frontend/screens/exercise/exercise_card.dart';
 import 'package:frontend/widgets/header.dart';
 import 'package:frontend/widgets/name_indicator.dart';
 import 'package:frontend/widgets/navigation_drawer.dart';
+import 'package:frontend/widgets/spaceLine.dart';
 
 class FilterCategory {
   final String title;
   final Map<String, bool> filters;
 
-  FilterCategory({required this.title, required this.filters});
+  FilterCategory({
+    required this.title,
+    required this.filters,
+  });
 }
 
 class PickExercise extends ConsumerStatefulWidget {
-  final bool isEdit;
+  final void Function(ExercisePlan, bool, int) onChangeExericiseList;
+  final List<ExercisePlan> pickedExercise;
+
   PickExercise({
-    this.isEdit = false,
     super.key,
+    required this.onChangeExericiseList,
+    required this.pickedExercise,
   });
 
   @override
@@ -31,9 +41,10 @@ class PickExercise extends ConsumerStatefulWidget {
 class _PickExerciseState extends ConsumerState<PickExercise> {
   int upperState = 0;
   int filterState = 0;
+  int positionCtr = 0;
 
-  late List<int> pickedExercise;
   List<Exercise> _exercisesFuture = [];
+
   final PageController _pageController = PageController();
 
   final List<FilterCategory> filterCategories = [
@@ -87,13 +98,6 @@ class _PickExerciseState extends ConsumerState<PickExercise> {
   @override
   void initState() {
     super.initState();
-    // _exercisesFuture = ExerciseApiService.fetchExercises();
-  }
-
-  void initExerciseList() {
-    setState(() {
-      pickedExercise = ref.read(exerciseListProvider);
-    });
   }
 
   void createExercise() {
@@ -101,22 +105,12 @@ class _PickExerciseState extends ConsumerState<PickExercise> {
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(
-        builder: (context) => CreateWorkout(
-          isEdit: widget.isEdit,
-        ),
+        builder: (context) => CreateWorkout(),
       ),
       (Route<dynamic> route) {
         return count++ >= 2;
       },
     );
-  }
-
-  void addRemoveExercise(int exerciseID) {
-    setState(() {
-      pickedExercise.contains(exerciseID)
-          ? pickedExercise.remove(exerciseID)
-          : pickedExercise.add(exerciseID);
-    });
   }
 
   Widget dropDown(List<String> inputList, String selectedItem,
@@ -150,6 +144,28 @@ class _PickExerciseState extends ConsumerState<PickExercise> {
       onChanged: onChanged,
     );
   }
+
+  void onChangePick() {
+    positionCtr = 0;
+    setState(() {});
+  }
+
+  void updateSetsAndReps(Exercise targetExercise, int newSets, int newReps) {
+    for (ExercisePlan exercise in widget.pickedExercise) {
+      if (exercise.exercise.id == targetExercise.id) {
+        print("UPDATING!");
+        exercise.sets = newSets;
+        exercise.reps = newReps;
+        setState(() {});
+        print(
+            "picked exercise sets --> ${widget.pickedExercise.elementAt(0).sets}");
+        print(
+            "picked exercise reps --> ${widget.pickedExercise.elementAt(0).reps}");
+      }
+    }
+  }
+
+  void updateExercisePosition() {}
 
   Widget filter() {
     return Container(
@@ -417,7 +433,6 @@ class _PickExerciseState extends ConsumerState<PickExercise> {
   Widget build(BuildContext context) {
     _exercisesFuture = ref.watch(exerciseFetchProvider);
 
-    initExerciseList();
     return Scaffold(
       backgroundColor: mainColor,
       drawer: const NavigationDrawerContent(),
@@ -452,72 +467,15 @@ class _PickExerciseState extends ConsumerState<PickExercise> {
                           child: Column(
                             children: _exercisesFuture.map(
                               (exercise) {
-                                return Container(
-                                  width:
-                                      MediaQuery.of(context).size.width * 0.90,
-                                  margin: const EdgeInsets.symmetric(
-                                      horizontal: 5.0),
-                                  child: Stack(
-                                    children: [
-                                      Container(
-                                        child: Row(
-                                          children: [
-                                            Container(
-                                              child: ExerciseCard(
-                                                exercise: exercise,
-                                              ),
-                                              width: MediaQuery.of(context)
-                                                      .size
-                                                      .width *
-                                                  0.82,
-                                            ),
-                                            Expanded(
-                                              child: GestureDetector(
-                                                onTap: () {
-                                                  addRemoveExercise(
-                                                      exercise.id);
-                                                },
-                                                child: Container(
-                                                  height: MediaQuery.of(context)
-                                                          .size
-                                                          .height *
-                                                      0.09,
-                                                  decoration: BoxDecoration(
-                                                    color:
-                                                        pickedExercise.contains(
-                                                                exercise.id)
-                                                            ? Colors.amber
-                                                            : secondaryColor,
-                                                    border: Border.all(
-                                                      color: pickedExercise
-                                                              .contains(
-                                                                  exercise.id)
-                                                          ? Colors.amber
-                                                          : secondaryColor,
-                                                      width: 2.0,
-                                                    ),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            10),
-                                                  ),
-                                                  child: Icon(
-                                                    pickedExercise.contains(
-                                                            exercise.id)
-                                                        ? Icons
-                                                            .remove_circle_outline
-                                                        : Icons
-                                                            .add_circle_outline_sharp,
-                                                    color: Colors.white,
-                                                    size: 25,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                                return ExerciseCard(
+                                  onChangeExericiseList:
+                                      widget.onChangeExericiseList,
+                                  exercise: exercise,
+                                  isPickExerciseMode: true,
+                                  isPicked: widget.pickedExercise.any(
+                                      (ExercisePlan) =>
+                                          ExercisePlan.exercise == exercise),
+                                  onChangePick: onChangePick,
                                 );
                               },
                             ).toList(),
@@ -528,85 +486,21 @@ class _PickExerciseState extends ConsumerState<PickExercise> {
                         height: 500,
                         child: SingleChildScrollView(
                           child: Column(
-                            children: _exercisesFuture.map(
+                            children: widget.pickedExercise.map(
                               (exercise) {
-                                return pickedExercise.contains(exercise.id)
-                                    ? Container(
-                                        width:
-                                            MediaQuery.of(context).size.width *
-                                                0.90,
-                                        margin: const EdgeInsets.symmetric(
-                                            horizontal: 5.0),
-                                        child: Stack(
-                                          children: [
-                                            Container(
-                                              child: Row(
-                                                children: [
-                                                  Container(
-                                                    child: ExerciseCard(
-                                                      exercise: exercise,
-                                                    ),
-                                                    width:
-                                                        MediaQuery.of(context)
-                                                                .size
-                                                                .width *
-                                                            0.82,
-                                                  ),
-                                                  Expanded(
-                                                    child: GestureDetector(
-                                                      onTap: () {
-                                                        addRemoveExercise(
-                                                            exercise.id);
-                                                      },
-                                                      child: Container(
-                                                        height: MediaQuery.of(
-                                                                    context)
-                                                                .size
-                                                                .height *
-                                                            0.09,
-                                                        decoration:
-                                                            BoxDecoration(
-                                                          color: pickedExercise
-                                                                  .contains(
-                                                                      exercise
-                                                                          .id)
-                                                              ? Colors.amber
-                                                              : secondaryColor,
-                                                          border: Border.all(
-                                                            color: pickedExercise
-                                                                    .contains(
-                                                                        exercise
-                                                                            .id)
-                                                                ? Colors.amber
-                                                                : secondaryColor,
-                                                            width: 2.0,
-                                                          ),
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(10),
-                                                        ),
-                                                        child: Icon(
-                                                          pickedExercise
-                                                                  .contains(
-                                                                      exercise
-                                                                          .id)
-                                                              ? Icons
-                                                                  .remove_circle_outline
-                                                              : Icons
-                                                                  .add_circle_outline_sharp,
-                                                          color: Colors.white,
-                                                          size: 25,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      )
-                                    : SizedBox();
+                                print("position-->$positionCtr");
+                                positionCtr++;
+                                return ExerciseCard(
+                                  onChangeExericiseList:
+                                      widget.onChangeExericiseList,
+                                  isSetsRepsMode: true,
+                                  exercise: exercise.exercise,
+                                  sets: exercise.sets,
+                                  reps: exercise.reps,
+                                  position: positionCtr - 1,
+                                  onChangeSetsReps: updateSetsAndReps,
+                                  onChangePick: onChangePick,
+                                );
                               },
                             ).toList(),
                           ),
@@ -616,18 +510,27 @@ class _PickExerciseState extends ConsumerState<PickExercise> {
                   ),
                 ),
               ),
-              Padding(
-                child: ElevatedButton(
-                  onPressed: createExercise,
-                  style: ElevatedButton.styleFrom(
-                    fixedSize: Size(300, 5),
-                    foregroundColor: Colors.white,
-                    backgroundColor: tertiaryColor,
+              spaceLine(context),
+              Container(
+                child: Padding(
+                  padding: EdgeInsets.only(left: 15, right: 15, bottom: 10),
+                  child: Row(
+                    children: [
+                      Spacer(),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          backgroundColor: tertiaryColor,
+                        ),
+                        child: const Text('Done'),
+                      ),
+                    ],
                   ),
-                  child: const Text('Done'),
                 ),
-                padding: EdgeInsets.all(5),
-              )
+              ),
             ],
           )
         ],

@@ -1,6 +1,7 @@
 
 from pathlib import Path
 # from backend.models.models import Model
+from exercises.consumers import TaskStatusConsumer
 from models.models import Model, TrainingProgress
 
 import os
@@ -32,6 +33,7 @@ import random as rand
 from django.contrib.sessions.backends.db import SessionStore
 
 from asgiref.sync import async_to_sync
+import asyncio
 from channels.layers import get_channel_layer
 
 optuna_Trial = 4
@@ -97,6 +99,9 @@ def trainModel(self,positiveDataPath, negativeDataPath,  dataset_info=None, mode
 
         print("result->",result)
 
+        asyncio.run(TaskStatusConsumer.update_task_progress(task_id, result * 100))
+
+
         async_to_sync(channel_layer.group_send)(
             f"task_{task_id}",
             {
@@ -105,6 +110,7 @@ def trainModel(self,positiveDataPath, negativeDataPath,  dataset_info=None, mode
 
             }
         )
+        
         print(f"Sent message to task_{task_id} with progress: {result}%")
 
 
@@ -168,6 +174,7 @@ def trainModel(self,positiveDataPath, negativeDataPath,  dataset_info=None, mode
         best_val_loss = 0
 
         model = create_lstm_model(trial)
+
 
         custom_early_stopping = EarlyStopping(
             monitor='val_loss', patience=15, restore_best_weights=True)

@@ -20,7 +20,7 @@ class HomePage extends ConsumerStatefulWidget {
 
 class _HomePageState extends ConsumerState<HomePage> {
   late Future<List<Workout>> _workoutsFuture;
-  late Future<List<Exercise>> _exerciseFuture;
+  late List<Exercise> _exerciseFuture;
 
   @override
   void initState() {
@@ -29,16 +29,21 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   Future<void> initWorkout() async {
-    _workoutsFuture = WorkoutApiService.fetchWorkouts(ref);
-    final workout = await _workoutsFuture;
-    print("workout--->$workout");
-    ref.read(workoutsFetchProvider.notifier).setWorkouts(workout);
+    try {
+      _workoutsFuture = WorkoutApiService.fetchWorkouts(ref);
+      final workout = await _workoutsFuture;
+      print("workout--->$workout");
+      ref.read(workoutsFetchProvider.notifier).setWorkouts(workout);
+      dynamic result = await ExerciseApiService.fetchExercises(1, [], "", "");
+      _exerciseFuture = (result["exercises"] as List<Exercise>).toList();
 
-    _exerciseFuture = ExerciseApiService.fetchExercises();
-    final exercises = await _exerciseFuture;
-    print("exercises--->$exercises");
+      final exercises = await _exerciseFuture;
+      print("exercises1--->$exercises");
 
-    ref.read(exerciseFetchProvider.notifier).setExercise(exercises);
+      ref.read(exerciseFetchProvider.notifier).setExercise(exercises);
+    } catch (e) {
+      print("Error at home initWorkout -> $e");
+    }
   }
 
   @override

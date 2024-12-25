@@ -171,15 +171,15 @@ def edit(request,exercise_id):
         
 
 
+from rest_framework.pagination import PageNumberPagination
+from math import ceil
 
 @api_view(['POST'])
 def getExerciseCard(request, account_id):
     name = request.data.get("name")
-    parts = request.data.get("parts")  # Assuming this might be a list (e.g., JSON or comma-separated)
+    parts = request.data.get("parts") 
     intensity = request.data.get("intensity")
     tag = request.data.get("tag")
-
-    print(f"parts -> {parts}")
 
     exercises = Exercise.objects.all()
 
@@ -189,7 +189,6 @@ def getExerciseCard(request, account_id):
     if parts:
         try:
             parts_list = json.loads(parts)
-            print(f"Parsed parts list: {parts_list}")
             exercises = exercises.filter(parts__contains=parts_list)
         except json.JSONDecodeError:
             return JsonResponse({"error": "Invalid parts format"}, status=400)
@@ -202,15 +201,22 @@ def getExerciseCard(request, account_id):
 
     exercises = exercises.filter(is_active=True)
 
-    # Apply pagination
     paginator = PageNumberPagination()
-    paginator.page_size = 10  # Number of items per page
+    paginator.page_size = 10
     paginated_exercises = paginator.paginate_queryset(exercises, request)
 
     serializer = ExerciseSerializer(paginated_exercises, context={'account_id': account_id}, many=True)
 
-    return paginator.get_paginated_response(serializer.data)
+    # Calculate the total number of pages
+    total_exercises = exercises.count()
+    max_pages = ceil(total_exercises / paginator.page_size)
 
+    response_data = {
+        "results": serializer.data,
+        "max_pages": max_pages
+    }
+
+    return paginator.get_paginated_response(response_data)
 
 
 

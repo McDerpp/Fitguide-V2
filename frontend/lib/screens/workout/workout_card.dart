@@ -25,7 +25,7 @@ class _WorkoutCardState extends ConsumerState<WorkoutCard> {
   String duration = "30";
   bool isFavorite = false;
 
-  void ExerciseLibrary() {
+  void WorkoutPage() {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -41,7 +41,7 @@ class _WorkoutCardState extends ConsumerState<WorkoutCard> {
       padding: const EdgeInsets.all(2),
       child: GestureDetector(
         onTap: () {
-          ExerciseLibrary();
+          WorkoutPage();
         },
         child: SizedBox(
           width: MediaQuery.of(context).size.width,

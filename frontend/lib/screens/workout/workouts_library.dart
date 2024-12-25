@@ -335,7 +335,7 @@ class _WorkoutLibraryState extends ConsumerState<WorkoutLibrary>
                 padding: const EdgeInsets.all(5),
                 child: NameIndicator(
                   controller: _pageController,
-                  names: const ["All Workout", "My Workout"],
+                  names: const ["All Workout","Favorite", "My Workout"],
                 ),
               ),
               Expanded(
@@ -365,6 +365,26 @@ class _WorkoutLibraryState extends ConsumerState<WorkoutLibrary>
                         ),
                       ),
                       // my workout page
+                      Container(
+                        height: 500,
+                        child: SingleChildScrollView(
+                          child: Column(
+                            children: _workoutsFuture.map(
+                              (workout) {
+                                return Container(
+                                  width:
+                                      MediaQuery.of(context).size.width * 0.90,
+                                  margin: const EdgeInsets.symmetric(
+                                      horizontal: 5.0),
+                                  child: WorkoutCard(
+                                    workout: workout,
+                                  ),
+                                );
+                              },
+                            ).toList(),
+                          ),
+                        ),
+                      ),
 
                       Container(
                         height: 500,

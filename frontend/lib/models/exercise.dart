@@ -51,8 +51,6 @@ class Exercise {
   });
 
   factory Exercise.fromJson(Map<String, dynamic> json) {
-    print("TESTING! -> ${json['parts']}");
-
     return Exercise(
       id: json['id'],
       name: json['name'],
@@ -87,4 +85,32 @@ class Exercise {
       met: json['MET'].toString(),
     );
   }
+
+  String toString() {
+    return 'Exercise(id:${id} name:${name} account:${account} description:${description} intensity:${intensity} imageUrl:${imageUrl} videoUrl:${videoUrl} ignoreCoordinates:${ignoreCoordinates} numExecution:${numExecution} numSet:${numSet} uploadAt:${uploadedAt} isActive:${isActive} isCustom:${isCustom} Parts:${parts} datasets:${datasets} model:${model} madeBy:${madeBy} met:${met} isFavorite:${isFavorite})';
+  }
 }
+
+
+// class Exercise {
+//   final int id;
+//   final String name;
+//   final int account;
+
+//   final String description;
+//   final String intensity;
+//   // final int estimatedTime;
+//   final String imageUrl;
+//   final String videoUrl;
+//   final List<int> ignoreCoordinates;
+//   final int numExecution;
+//   final int numSet;
+//   final DateTime uploadedAt;
+//   final bool isActive;
+//   final bool isCustom;
+//   final List<String> parts;
+//   final List<Dataset> datasets;
+//   final Model? model;
+//   final String madeBy;
+//   final String met;
+//   final bool isFavorite;

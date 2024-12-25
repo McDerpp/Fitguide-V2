@@ -110,7 +110,7 @@ class UploadImage extends ConsumerStatefulWidget {
     super.key,
     required this.onChangeImage,
     required this.onChangeThumbnail,
-    required this.thumbnail,
+    this.thumbnail,
   });
 
   @override
@@ -146,7 +146,7 @@ class _UploadImageState extends ConsumerState<UploadImage> {
       height: MediaQuery.of(context).size.height * .25,
       width: MediaQuery.of(context).size.width * .9,
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(10),
         child: InkWell(
           onTap: () async {
             final image = await pickImage();

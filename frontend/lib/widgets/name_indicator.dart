@@ -40,14 +40,18 @@ class _NameIndicatorState extends State<NameIndicator> {
               child: GestureDetector(
                 child: Container(
                   decoration: BoxDecoration(
-                      color: isSelected ? tertiaryColor : miscColor,
-                      borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(
-                              widget.names.length - 1 == index ? 0 : 10),
-                          bottomLeft: Radius.circular(
-                              widget.names.length - 1 == index ? 0 : 10),
-                          topRight: Radius.circular(index == 0 ? 0 : 10),
-                          bottomRight: Radius.circular(index == 0 ? 0 : 10))),
+                    color: isSelected ? tertiaryColor : miscColor,
+                    borderRadius: index != 0 && index != widget.names.length - 1
+                        ? null
+                        : BorderRadius.only(
+                            topLeft: Radius.circular(
+                                widget.names.length - 1 == index ? 0 : 10),
+                            bottomLeft: Radius.circular(
+                                widget.names.length - 1 == index ? 0 : 10),
+                            topRight: Radius.circular(index == 0 ? 0 : 10),
+                            bottomRight: Radius.circular(index == 0 ? 0 : 10),
+                          ),
+                  ),
                   child: Padding(
                     padding: EdgeInsets.all(5),
                     child: Center(

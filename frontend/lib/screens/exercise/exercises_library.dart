@@ -13,6 +13,8 @@ import 'package:frontend/widgets/deleteConfirmation.dart';
 import 'package:frontend/widgets/header.dart';
 import 'package:frontend/widgets/name_indicator.dart';
 import 'package:frontend/widgets/navigation_drawer.dart';
+import 'package:frontend/widgets/paginateNumber.dart';
+import 'package:number_paginator/number_paginator.dart';
 
 class FilterCategory {
   final String title;
@@ -31,8 +33,10 @@ class ExerciseLibrary extends ConsumerStatefulWidget {
 }
 
 class _ExerciseLibraryState extends ConsumerState<ExerciseLibrary> {
-  int upperState = 0;
-  int filterState = 0;
+  int _upperState = 0;
+  int _filterState = 0;
+  int _currentPage = 1;
+  int _maxPages = 5;
 
   List<bool> favoriteIsSelected = [false, false];
   List<String> _bodyPart = ['All', 'Two', 'Three', 'Four'];
@@ -95,8 +99,11 @@ class _ExerciseLibraryState extends ConsumerState<ExerciseLibrary> {
   ];
 
   Future<void> initExercise() async {
-    _exercisesFuture = ExerciseApiService.fetchExercises();
-    _exercisesList = await _exercisesFuture;
+    print("current page ---> $_currentPage");
+    dynamic result = await ExerciseApiService.fetchExercises(_currentPage,[],"","");
+    _exercisesList = result["exercises"];
+    _maxPages = result["maxPages"];
+
     setState(() {});
   }
 
@@ -248,7 +255,7 @@ class _ExerciseLibraryState extends ConsumerState<ExerciseLibrary> {
                     onTap: () {
                       setState(
                         () {
-                          upperState = 1;
+                          _upperState = 1;
                         },
                       );
                     },
@@ -275,8 +282,8 @@ class _ExerciseLibraryState extends ConsumerState<ExerciseLibrary> {
           decoration: BoxDecoration(
             color: tertiaryColor,
             borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(filterState == 1 ? 0 : 10),
-              bottomRight: Radius.circular(filterState == 1 ? 0 : 10),
+              bottomLeft: Radius.circular(_filterState == 1 ? 0 : 10),
+              bottomRight: Radius.circular(_filterState == 1 ? 0 : 10),
               topLeft: Radius.circular(10),
               topRight: Radius.circular(10),
             ),
@@ -317,16 +324,16 @@ class _ExerciseLibraryState extends ConsumerState<ExerciseLibrary> {
                           onTap: () {
                             setState(
                               () {
-                                upperState = 0;
+                                _upperState = 0;
                               },
                             );
                           },
                           child: Icon(
-                            upperState == 1
+                            _upperState == 1
                                 ? Icons.manage_search
                                 : Icons.search,
                             color:
-                                upperState == 1 ? Colors.amber : Colors.white,
+                                _upperState == 1 ? Colors.amber : Colors.white,
                             size: 25.0,
                           ),
                         ),
@@ -365,15 +372,16 @@ class _ExerciseLibraryState extends ConsumerState<ExerciseLibrary> {
                       Spacer(),
                       GestureDetector(
                         child: Icon(
-                          filterState == 1
+                          _filterState == 1
                               ? Icons.filter_alt
                               : Icons.filter_alt_outlined,
-                          color: filterState == 1 ? Colors.amber : Colors.white,
+                          color:
+                              _filterState == 1 ? Colors.amber : Colors.white,
                         ),
                         onTap: () {
-                          print("filterState---> $filterState");
+                          print("_filterState---> $_filterState");
                           setState(() {
-                            filterState = filterState == 1 ? 0 : 1;
+                            _filterState = _filterState == 1 ? 0 : 1;
                           });
                         },
                       ),
@@ -384,13 +392,13 @@ class _ExerciseLibraryState extends ConsumerState<ExerciseLibrary> {
             ),
           ),
         ),
-        filterState == 1 ? filter() : SizedBox()
+        _filterState == 1 ? filter() : SizedBox()
       ],
     );
   }
 
   Widget upperStateAdjust() {
-    return upperState == 0 ? upperSearchBase() : upperSearchExpanded();
+    return _upperState == 0 ? upperSearchBase() : upperSearchExpanded();
   }
 
   Widget dropDown(List<String> inputList, String selectedItem,
@@ -432,68 +440,102 @@ class _ExerciseLibraryState extends ConsumerState<ExerciseLibrary> {
         // Page 1
         Container(
           height: 500,
-          child: SingleChildScrollView(
-            child: Column(
-              children: _exercisesList.map(
-                (exercise) {
-                  return Container(
-                    width: MediaQuery.of(context).size.width * 0.90,
-                    margin: const EdgeInsets.symmetric(horizontal: 5.0),
-                    child: ExerciseCard(
-                      exercise: exercise,
-                    ),
-                  );
-                },
-              ).toList(),
+          child: Scrollbar(
+            thumbVisibility: true,
+            thickness: 3,
+            child: SingleChildScrollView(
+              child: Column(
+                children: _exercisesList.map(
+                  (exercise) {
+                    return Container(
+                      width: MediaQuery.of(context).size.width * 0.90,
+                      margin: const EdgeInsets.symmetric(horizontal: 5.0),
+                      child: ExerciseCard(
+                        exercise: exercise,
+                      ),
+                    );
+                  },
+                ).toList(),
+              ),
+            ),
+          ),
+        ),
+        Container(
+          height: 500,
+          child: Scrollbar(
+            thumbVisibility: true,
+            thickness: 3,
+            child: SingleChildScrollView(
+              child: Column(
+                children: _exercisesList.map(
+                  (exercise) {
+                    if (exercise.isFavorite == true) {
+                      return Container(
+                        width: MediaQuery.of(context).size.width * 0.90,
+                        margin: const EdgeInsets.symmetric(horizontal: 5.0),
+                        child: ExerciseCard(
+                          exercise: exercise,
+                        ),
+                      );
+                    } else {
+                      return SizedBox.shrink();
+                    }
+                  },
+                ).toList(),
+              ),
             ),
           ),
         ),
         // Page 2
         Container(
           height: 500,
-          child: SingleChildScrollView(
-            child: Column(
-              children: _exercisesList.map(
-                (exercise) {
-                  if (exercise.account.toString() == setup.id) {
-                    return Container(
-                      width: MediaQuery.of(context).size.width * 0.90,
-                      margin: const EdgeInsets.symmetric(horizontal: 5.0),
-                      child: Stack(
-                        children: [
-                          ExerciseCard(
-                            exercise: exercise,
-                          ),
-                          Positioned(
-                            bottom: 0,
-                            right: 0,
-                            child: Padding(
-                              padding: const EdgeInsets.all(5),
-                              child: GestureDetector(
-                                onTap: () {
-                                  deleteConfirmation(
-                                    isExercise: true,
-                                    ref: ref,
-                                    context: context,
-                                    id: exercise.id,
-                                  );
-                                },
-                                child: Icon(
-                                  Icons.highlight_remove_sharp,
-                                  color: secondaryColor,
-                                  size: 25.0,
+          child: Scrollbar(
+            thumbVisibility: true,
+            thickness: 3,
+            child: SingleChildScrollView(
+              child: Column(
+                children: _exercisesList.map(
+                  (exercise) {
+                    if (exercise.account.toString() == setup.id) {
+                      return Container(
+                        width: MediaQuery.of(context).size.width * 0.90,
+                        margin: const EdgeInsets.symmetric(horizontal: 5.0),
+                        child: Stack(
+                          children: [
+                            ExerciseCard(
+                              exercise: exercise,
+                            ),
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: Padding(
+                                padding: const EdgeInsets.all(5),
+                                child: GestureDetector(
+                                  onTap: () {
+                                    deleteConfirmation(
+                                      isExercise: true,
+                                      ref: ref,
+                                      context: context,
+                                      id: exercise.id,
+                                    );
+                                  },
+                                  child: Icon(
+                                    Icons.highlight_remove_sharp,
+                                    color: secondaryColor,
+                                    size: 25.0,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                    );
-                  } else {
-                    return SizedBox.shrink();
-                  }
-                },
-              ).toList(),
+                          ],
+                        ),
+                      );
+                    } else {
+                      return SizedBox.shrink();
+                    }
+                  },
+                ).toList(),
+              ),
             ),
           ),
         ),
@@ -503,20 +545,23 @@ class _ExerciseLibraryState extends ConsumerState<ExerciseLibrary> {
 
   Widget fitUser() {
     return Container(
-      height: 500,
-      child: SingleChildScrollView(
-        child: Column(
-          children: _exercisesList.map(
-            (exercise) {
-              return Container(
-                width: MediaQuery.of(context).size.width * 0.90,
-                margin: const EdgeInsets.symmetric(horizontal: 5.0),
-                child: ExerciseCard(
-                  exercise: exercise,
-                ),
-              );
-            },
-          ).toList(),
+      child: Scrollbar(
+        thumbVisibility: true,
+        thickness: 3,
+        child: SingleChildScrollView(
+          child: Column(
+            children: _exercisesList.map(
+              (exercise) {
+                return Container(
+                  width: MediaQuery.of(context).size.width * 0.90,
+                  margin: const EdgeInsets.symmetric(horizontal: 5.0),
+                  child: ExerciseCard(
+                    exercise: exercise,
+                  ),
+                );
+              },
+            ).toList(),
+          ),
         ),
       ),
     );
@@ -536,20 +581,40 @@ class _ExerciseLibraryState extends ConsumerState<ExerciseLibrary> {
                 height: MediaQuery.of(context).size.height * 0.01,
               ),
               upperStateAdjust(),
-              ref.read(accountFetchProvider).userType == 'Fit-User'
-                  ? SizedBox()
-                  : Container(
-                      padding: const EdgeInsets.all(5),
-                      child: NameIndicator(
-                        controller: _pageController,
-                        names: ["All Exercises", "My Exercises"],
-                      ),
-                    ),
-              Expanded(
-                child: Container(
-                    child: ref.read(accountFetchProvider).userType == 'Fit-User'
-                        ? fitUser()
-                        : fitCreator()),
+              // ref.read(accountFetchProvider).userType == 'Fit-User'
+              //     ? SizedBox()
+              //     : Container(
+              //         padding: const EdgeInsets.all(5),
+              //         child: NameIndicator(
+              //           controller: _pageController,
+              //           names: ["All Exercises", "My Exercises"],
+              //         ),
+              //       ),
+              Container(
+                padding: const EdgeInsets.all(5),
+                child: NameIndicator(
+                  controller: _pageController,
+                  names: ["All Exercises","Favorite" ,"My Exercises"],
+                ),
+              ),
+              // Expanded(
+              //     // height: MediaQuery.of(context).size.height * 0.7,
+              //     child: ref.read(accountFetchProvider).userType == 'Fit-User'
+              //         ? fitUser()
+              //         : fitCreator()),
+              Expanded(child: fitCreator()),
+              NumberPaginator(
+                numberPages: _maxPages,
+                onPageChange: (int index) {
+                  setState(() {
+                    _currentPage = index + 1;
+                    initExercise();
+                  });
+                },
+                config: NumberPaginatorUIConfig(
+                  buttonUnselectedForegroundColor: Colors.white,
+                  buttonSelectedBackgroundColor: secondaryColor,
+                ),
               )
             ],
           ),

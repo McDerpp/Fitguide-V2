@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:frontend/account.dart';
 import 'package:frontend/services/mainAPI.dart';
 import 'package:http/http.dart' as http;
 import 'package:frontend/provider/provider.dart';
@@ -11,17 +12,31 @@ import '../models/exercise.dart';
 class ExerciseApiService {
   static String baseUrl = '${api.baseUrl}/api/exercises/';
 
-  static Future<List<Exercise>> fetchExercises() async {
-    final response =
-        // await http.get(Uri.parse('${baseUrl}getExerciseCard/${setup.id}'));
-        await http.get(Uri.parse('${baseUrl}getExercise/'));
+  static Future<dynamic> fetchExercises(
+      int page, List<String> parts, String intensity, String name) async {
+    try {
+      final response = await http
+          .post(Uri.parse('${baseUrl}getExerciseCard/${setup.id}/?page=$page'));
 
-    if (response.statusCode == 200) {
-      List<dynamic> jsonList = json.decode(response.body);
-      print("jsonList-->$jsonList");
-      return jsonList.map((json) => Exercise.fromJson(json)).toList();
-    } else {
-      throw Exception('Failed to load exercises');
+      Map<String, dynamic> body = {
+        "filterType": "",
+        "userId": "",
+      };
+
+      if (response.statusCode == 200) {
+        List<dynamic> exercises =
+            json.decode(response.body)["results"]["results"];
+        int _maxPages = json.decode(response.body)["results"]["max_pages"];
+        return {
+          "exercises":
+              exercises.map((json) => Exercise.fromJson(json)).toList(),
+          "maxPages": _maxPages
+        };
+      } else {
+        throw Exception('Failed to load exercises');
+      }
+    } catch (e) {
+      print("error at fetch exercise --> $e");
     }
   }
 
