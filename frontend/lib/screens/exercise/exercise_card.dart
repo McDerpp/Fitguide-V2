@@ -28,6 +28,8 @@ class ExerciseCard extends ConsumerStatefulWidget {
   final int position;
   final int restDuration;
   final void Function(int, int, int, int)? onChangeSetsRepsRest;
+  final AnimationController? animationController;
+  final Animation<double>? animation;
 
   // training mode
   final double progress;
@@ -43,6 +45,8 @@ class ExerciseCard extends ConsumerStatefulWidget {
     this.onChangeSetsRepsRest,
     this.onChangePick,
     this.pickedExercise,
+    this.animation,
+    this.animationController,
     this.restDuration = 60,
     this.isPicked = false,
     this.position = 0,
@@ -55,17 +59,79 @@ class ExerciseCard extends ConsumerStatefulWidget {
   ConsumerState<ExerciseCard> createState() => _ExerciseCardState();
 }
 
-class _ExerciseCardState extends ConsumerState<ExerciseCard> {
-  void ExerciseLibrary() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-          builder: (context) => ExerciseScreen(
-                exercise: widget.exercise,
-              )),
-    );
+class _ExerciseCardState extends ConsumerState<ExerciseCard>
+    with TickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    // animationMode();
   }
 
+  @override
+  void dispose() {
+    _controller.dispose(); // Dispose of the controller
+    super.dispose();
+  }
+
+  void animationMode() {
+    print("attempt initializing");
+    try {
+      print("initializing animation controller");
+// this is for deleting exercise picked
+
+      _controller = AnimationController(
+        duration: const Duration(milliseconds: 400),
+        vsync: this,
+      );
+
+      _animation = CurvedAnimation(
+        parent: _controller,
+        curve: Curves.fastOutSlowIn,
+      );
+
+      _controller.addStatusListener((status) {
+        print("status is -> $status");
+        if (status == AnimationStatus.dismissed) {
+          print("done!!!!!!!!!!!!!!!!");
+          setState(() {
+            widget.onChangeExericiseList!(
+                ExercisePlan(
+                  exercise: widget.exercise,
+                  sets: widget.sets,
+                  reps: widget.reps,
+                  restDuration: widget.restDuration,
+                ),
+                false,
+                widget.position);
+            widget.onChangePick!();
+          });
+        }
+      });
+      _controller.value = 1.0;
+      setState(() {});
+    } catch (e) {}
+  }
+
+// picking of mode
+  Widget modeSwitch() {
+    if (widget.trainingProgress == true) {
+      return setsRepsMode();
+    } else if (widget.isPickExerciseMode == true) {
+      return pickExercise();
+    } else if (widget.isSetsRepsMode == true) {
+      return setsRepsMode();
+    } else {
+      return base();
+    }
+  }
+
+// customized appearance for the base of each use for exercise card
+//  - picking of exercise
+//  - setting of sets, reps, and rest duration
+//  - default
   BorderRadius modes() {
     if (widget.trainingProgress == true) {
       return BorderRadius.only(
@@ -84,49 +150,17 @@ class _ExerciseCardState extends ConsumerState<ExerciseCard> {
         topLeft: Radius.circular(10), topRight: Radius.circular(10));
   }
 
-  Widget setsRepsModeAddRemove() {
-    // this is from all exercises
-    return Expanded(
-      child: GestureDetector(
-        onTap: () {
-          setState(() {
-            // widget.onChangeExericiseList!(widget.exercise);
-          });
-        },
-        child: Container(
-          height: MediaQuery.of(context).size.height * 0.09,
-          decoration: BoxDecoration(
-            color: widget.isPicked ? Colors.amber : secondaryColor,
-            border: Border.all(
-              color: widget.isPicked ? Colors.amber : secondaryColor,
-              width: 2.0,
-            ),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(
-            widget.isPicked
-                ? Icons.remove_circle_outline
-                : Icons.add_circle_outline_sharp,
-            color: Colors.white,
-            size: 25,
-          ),
-        ),
-      ),
+  void ExerciseLibrary() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+          builder: (context) => ExerciseScreen(
+                exercise: widget.exercise,
+              )),
     );
   }
 
-  Widget modeSwitch() {
-    if (widget.trainingProgress == true) {
-      return setsRepsMode();
-    } else if (widget.isPickExerciseMode == true) {
-      return pickExercise();
-    } else if (widget.isSetsRepsMode == true) {
-      return setsRepsMode();
-    } else {
-      return base();
-    }
-  }
-
+// ===========[MODE]===========
 // in this mode user is currently picking exercise to add to the workout
   Widget pickExercise() {
     int pickedCtr = 0;
@@ -205,8 +239,11 @@ class _ExerciseCardState extends ConsumerState<ExerciseCard> {
     );
   }
 
+// ===========[MODE]===========
 // in this mode, user can define amount of sets, reps and rest of the exercise added to the workout
   Widget setsRepsMode() {
+    print("rendering exercise card?!-->${widget.position}");
+
     // this is from current exercise
     Widget sets() {
       return Container(
@@ -415,7 +452,54 @@ class _ExerciseCardState extends ConsumerState<ExerciseCard> {
     );
   }
 
+// ===========[MODE]===========
+// this is used for basis for every mode
   Widget base() {
+    Widget deletePickedExercise() {
+      return GestureDetector(
+        child: Padding(
+          padding: const EdgeInsets.all(5),
+          child: Icon(
+            Icons.highlight_remove_sharp,
+            color: secondaryColor,
+            size: 25.0,
+          ),
+        ),
+        onTap: () {
+          print("deleteing");
+          setState(() {
+            _controller.reverse();
+          });
+        },
+      );
+    }
+
+    Widget favoriteExercise() {
+      return GestureDetector(
+        child: Padding(
+          padding: const EdgeInsets.all(5),
+          child: Icon(
+            widget.exercise.isFavorite == false
+                ? Icons.favorite_border
+                : Icons.favorite,
+            color: secondaryColor,
+            size: 25.0,
+          ),
+        ),
+        onTap: () {
+          widget.exercise.isFavorite == false
+              ? HistoryApiService.addExerciseFavorite(
+                  ref: ref,
+                  accountID: int.parse(setup.id),
+                  exerciseID: widget.exercise.id)
+              : HistoryApiService.deleteExerciseFavorite(
+                  ref: ref,
+                  accountID: int.parse(setup.id),
+                  exerciseID: widget.exercise.id);
+        },
+      );
+    }
+
     return Container(
       width: MediaQuery.of(context).size.width * .90,
       child: GestureDetector(
@@ -549,59 +633,9 @@ class _ExerciseCardState extends ConsumerState<ExerciseCard> {
                                 right: 0,
                                 child: !widget.isSetsRepsMode
 // like button for every mode beside isSetRepMode
-                                    ? GestureDetector(
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(5),
-                                          child: Icon(
-                                            widget.exercise.isFavorite == false
-                                                ? Icons.favorite_border
-                                                : Icons.favorite,
-                                            color: secondaryColor,
-                                            size: 25.0,
-                                          ),
-                                        ),
-                                        onTap: () {
-                                          widget.exercise.isFavorite == false
-                                              ? HistoryApiService
-                                                  .addExerciseFavorite(
-                                                      ref: ref,
-                                                      accountID:
-                                                          int.parse(setup.id),
-                                                      exerciseID:
-                                                          widget.exercise.id)
-                                              : HistoryApiService
-                                                  .deleteExerciseFavorite(
-                                                      ref: ref,
-                                                      accountID:
-                                                          int.parse(setup.id),
-                                                      exerciseID:
-                                                          widget.exercise.id);
-                                        },
-                                      )
+                                    ? favoriteExercise()
 // for updating sets and reps, like is replaced with remove to save space for sets,reps and rest
-                                    : GestureDetector(
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(5),
-                                          child: Icon(
-                                            Icons.highlight_remove_sharp,
-                                            color: secondaryColor,
-                                            size: 25.0,
-                                          ),
-                                        ),
-                                        onTap: () {
-                                          widget.onChangeExericiseList!(
-                                              ExercisePlan(
-                                                exercise: widget.exercise,
-                                                sets: widget.sets,
-                                                reps: widget.reps,
-                                                restDuration:
-                                                    widget.restDuration,
-                                              ),
-                                              false,
-                                              widget.position);
-                                          widget.onChangePick!();
-                                        },
-                                      ),
+                                    : deletePickedExercise(),
                               ),
                       ],
                     ),
@@ -617,6 +651,11 @@ class _ExerciseCardState extends ConsumerState<ExerciseCard> {
 
   @override
   Widget build(BuildContext context) {
-    return modeSwitch();
+    animationMode();
+    // animation problem
+    return widget.isSetsRepsMode
+        ? ScaleTransition(scale: _controller, child: modeSwitch())
+        : modeSwitch();
+    // return modeSwitch();
   }
 }

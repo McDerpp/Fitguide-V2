@@ -145,11 +145,14 @@ class _PickExerciseState extends ConsumerState<PickExercise> {
     );
   }
 
+  // this trigger when an exercise is added or removed
   void onChangePick() {
-    positionCtr = 0;
-    setState(() {});
+    setState(() {
+      positionCtr = 0;
+    });
   }
 
+// this is triggered when an exercise reps, sets or duration
   void updateSetsRepsRest(
     int newSets,
     int newReps,
@@ -483,15 +486,43 @@ class _PickExerciseState extends ConsumerState<PickExercise> {
                           ),
                         ),
                       ),
+                      // Container(
+                      //   height: 500,
+                      //   child: SingleChildScrollView(
+                      //     child: Column(
+                      //       children: widget.pickedExercise.map(
+                      //         (exercise) {
+                      //           positionCtr++;
+                      //           print("initial position-->$positionCtr");
+
+                      //           return ExerciseCard(
+                      //             key: ValueKey(positionCtr),
+                      //             onChangeExericiseList:
+                      //                 widget.onChangeExericiseList,
+                      //             isSetsRepsMode: true,
+                      //             exercise: exercise.exercise,
+                      //             sets: exercise.sets,
+                      //             reps: exercise.reps,
+                      //             restDuration: exercise.restDuration,
+                      //             position: positionCtr - 1,
+                      //             onChangeSetsRepsRest: updateSetsRepsRest,
+                      //             onChangePick: onChangePick,
+                      //           );
+                      //         },
+                      //       ).toList(),
+                      //     ),
+                      //   ),
+                      // ),
+
                       Container(
                         height: 500,
                         child: SingleChildScrollView(
                           child: Column(
                             children: widget.pickedExercise.map(
                               (exercise) {
-                                print("position-->$positionCtr");
-                                positionCtr++;
                                 return ExerciseCard(
+                                  key: ValueKey(exercise
+                                      .exercise.id), // Use a unique identifier
                                   onChangeExericiseList:
                                       widget.onChangeExericiseList,
                                   isSetsRepsMode: true,
@@ -499,7 +530,8 @@ class _PickExerciseState extends ConsumerState<PickExercise> {
                                   sets: exercise.sets,
                                   reps: exercise.reps,
                                   restDuration: exercise.restDuration,
-                                  position: positionCtr - 1,
+                                  position: widget.pickedExercise.indexOf(
+                                      exercise), // Get position dynamically
                                   onChangeSetsRepsRest: updateSetsRepsRest,
                                   onChangePick: onChangePick,
                                 );
