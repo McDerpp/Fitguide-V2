@@ -7,6 +7,7 @@ Fitguide V2 is an exercise application that utilizes machine learning to determi
  - 
 
 
+
 **[Technologies used]**
 - **TensorFlow & TFLite**: Pose estimation, model training, and inference.
 - **WebSocket**: Model training progress tracking.
@@ -14,12 +15,14 @@ Fitguide V2 is an exercise application that utilizes machine learning to determi
 - **Flutter**: Cross-platform mobile application.
 - **Django**: Backend framework for API and business logic.
 
+
 **[Features]**
  - Real-time human action recognition
  - Streamlined data generation and model training
  - Fully customizable exercises and workouts
  - Progress Tracking
  - Content Sharing
+
 
 **[Future features]** 
 - Gamified exercise utilizing pose estimation
